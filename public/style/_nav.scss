@@ -1,0 +1,33 @@
+#nav {
+    position: absolute;
+    width: 200px;
+    left: -200px;
+    height: 100%;
+    transition: left .5s ease;
+    background: #000;
+    z-index: 40;
+    padding: 80px 20px 20px;
+    box-sizing: border-box;
+
+    &.is-open {
+        left: 0;
+    }
+
+    ul {
+        margin: 0;
+        padding: 0;
+    }
+
+    li {
+        list-style-type: none;
+        padding: 0;
+        margin-bottom: 10px;
+
+        a {
+            text-transform: uppercase;
+            color: #fff;
+            font-family: 'InconsolataSemiExpanded-ExtraLight', 'Lucida Console', Monaco, monospace;
+            font-size: 1.2rem;
+        }
+    }
+}

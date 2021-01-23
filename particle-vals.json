@@ -1,0 +1,147 @@
+[{
+    "state": 1,
+    "gravRadius": 128,
+    "mass": 1,
+    "mergeCount": 1,
+    "reactionCount": 2,
+    "explosionForce": 16,
+    "explosionSize": 16
+  },
+  {
+    "state": 2,
+    "gravRadius": 128,
+    "mass": 0.64,
+    "mergeCount": 1,
+    "reactionCount": 2,
+    "explosionForce": 16,
+    "explosionSize": 16
+  },
+  {
+    "state": 3,
+    "gravRadius": 128,
+    "mass": 0.64,
+    "mergeCount": 2,
+    "reactionCount": 3,
+    "explosionForce": 16,
+    "explosionSize": 16
+  },
+  {
+    "state": 4,
+    "gravRadius": 128,
+    "mass": 0.64,
+    "mergeCount": 2,
+    "reactionCount": 3,
+    "explosionForce": 16,
+    "explosionSize": 16
+  },
+  {
+    "state": 5,
+    "gravRadius": 96,
+    "mass": 0.64,
+    "mergeCount": 2,
+    "reactionCount": 3,
+    "reactionSpeed": 1.4,
+    "explosionForce": 24,
+    "explosionSize": 24
+  },
+  {
+    "state": 6,
+    "gravRadius": 96,
+    "mass": 0.64,
+    "mergeCount": 2,
+    "reactionCount": 3,
+    "explosionForce": 24,
+    "explosionSize": 24
+  },
+  {
+    "state": 7,
+    "gravRadius": 96,
+    "mass": 0.32,
+    "mergeCount": 3,
+    "reactionCount": 4,
+    "explosionForce": 24,
+    "explosionSize": 24
+  },
+  {
+    "state": 8,
+    "gravRadius": 96,
+    "mass": 0.32,
+    "mergeCount": 3,
+    "reactionCount": 4,
+    "explosionForce": 24,
+    "explosionSize": 24
+  },
+  {
+    "state": 9,
+    "gravRadius": 64,
+    "mass": 0.32,
+    "mergeCount": 3,
+    "reactionCount": 4,
+    "explosionForce": 24,
+    "explosionSize": 24
+  },
+  {
+    "state": 10,
+    "gravRadius": 64,
+    "mass": 0.32,
+    "mergeCount": 3,
+    "reactionCount": 4,
+    "explosionForce": 24,
+    "explosionSize": 24
+  },
+  {
+    "state": 11,
+    "gravRadius": 64,
+    "mass": 0.32,
+    "mergeCount": 3,
+    "reactionCount": 4,
+    "explosionForce": 24,
+    "explosionSize": 24
+  },
+  {
+    "state": 12,
+    "gravRadius": 8,
+    "mass": 0.04,
+    "mergeCount": 16,
+    "reactionCount": 0,
+    "explosionForce": 24,
+    "explosionSize": 24
+  },
+
+  {
+    "state": 13,
+    "gravRadius": 48,
+    "mass": 0.24,
+    "mergeCount": 4,
+    "reactionCount": 5,
+    "explosionForce": 24,
+    "explosionSize": 24
+  },
+  {
+    "state": 14,
+    "gravRadius": 48,
+    "mass": 0.24,
+    "mergeCount": 4,
+    "reactionCount": 5,
+    "explosionForce": 24,
+    "explosionSize": 24
+  },
+  {
+    "state": 15,
+    "gravRadius": 48,
+    "mass": 0.24,
+    "mergeCount": 4,
+    "reactionCount": 5,
+    "explosionForce": 24,
+    "explosionSize": 24
+  },
+  {
+    "state": 16,
+    "gravRadius": 48,
+    "mass": 0.16,
+    "mergeCount": 7,
+    "reactionCount": 8,
+    "explosionForce": 24,
+    "explosionSize": 24
+  }
+]

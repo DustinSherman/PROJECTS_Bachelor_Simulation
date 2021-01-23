@@ -1,0 +1,55 @@
+$graydark: #1e1e1e;
+$graylight: #e5e5e5;
+
+$breakTablet: 768px;
+$breakLaptop: 1024px;
+$breakDesktop: 1280px;
+
+@import 'font', 'loader', 'header', 'nav', 'canvas', 'footer';
+
+html,
+body {
+    margin: 0;
+    min-height: 100%;
+    max-width: 100%;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+}
+
+body {
+    background: #000;
+    display: flex;
+    flex-flow: column;
+    font-size: 14px;
+}
+
+header {
+    flex: 0 1 auto;
+}
+
+#wrapper {
+    flex: 1 1 auto;
+    height: auto;
+    position: relative;
+}
+
+button,
+button:focus,
+button:active,
+button:hover {
+    border: 0;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    padding: 0;
+    margin: 0;
+    background: none;
+}
+
+button:hover {
+    cursor: pointer;
+}
+
+a {
+    text-decoration: none;
+}

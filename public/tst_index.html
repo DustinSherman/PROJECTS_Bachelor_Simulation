@@ -1,0 +1,137 @@
+<!DOCTYPE HTML>
+
+<html>
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title></title>
+
+<link rel="stylesheet" type="text/css" href="style/hamburgers.css">
+<link rel="stylesheet" type="text/css" href="style/style.css">
+
+</head>
+
+<body class="loading">
+	<header>
+		<div class="hamburger hamburger--squeeze" id="hamburger">
+			<div class="hamburger-box">
+				<div class="hamburger-inner"></div>
+			</div>
+		</div>
+
+		<div class="info">
+			<span class="headline">
+				Automata Universalis
+			</span>
+			<span id="iteration">
+				Iteration
+			</span>
+			<span id="date">
+				Initialisiert
+			</span>
+		</div>
+
+		<div class="controls">
+			<div class="overlay"></div>
+			<button id="stop">
+			</button>
+			<button id="playpause" class="active">
+			</button>
+			<button id="fastbackward">
+			</button>
+			<span id="speed">
+				1.0
+			</span>
+			<button id="fastforward">
+			</button>
+		</div>
+
+		<div id="timeline">
+			<div id="marker">
+
+			</div>
+
+			<div id="line">
+
+			</div>
+		</div>
+
+		<div class="time">
+			<span id="frames">20 / 14400</span>
+			<span id="realtime">01:15 / 15:00</span>
+		</div>
+
+	</header>
+
+	<div id="nav">
+		<ul>
+			<li>
+				<a href="">
+					Start
+				</a>
+			</li>
+			<li>
+				<a href="">
+					About
+				</a>
+			</li>
+			<li>
+				<a href="">
+					Simulation
+				</a>
+			</li>
+			<li>
+				<a href="">
+					Imprint
+				</a>
+			</li>
+		</ul>
+	</div>
+
+	<div id="wrapper">
+		<div id="loader">
+			<span id="loader-percent"></span>
+
+			<div id="loader-bar"></div>
+		</div>
+		
+		
+	</div>
+
+<script>
+	let stateMax = 8;
+
+	for (let i = 1; i <= stateMax; i++) {
+		let fluidMultiplier = Math.abs(Math.abs(Math.abs(i) - 1 - stateMax/2 + .5) - stateMax/2 + .5) + 1;
+
+		if (Math.abs(i) < stateMax/2) {
+			fluidMultiplier += (stateMax/2 - Math.abs(i)) * .5;
+		}
+
+		console.log(i, fluidMultiplier);
+
+	}
+
+	for (let i = -1; i >= -stateMax; i--) {
+		let fluidMultiplier = Math.abs(Math.abs(Math.abs(i) - 1 - stateMax/2 + .5) - stateMax/2 + .5) + 1;
+
+		if (Math.abs(i) < stateMax/2) {
+			fluidMultiplier += (stateMax/2 - Math.abs(i)) * .5;
+		}
+
+		console.log(i, fluidMultiplier);
+
+	}
+
+</script>
+
+	<!--<script src="js/webglscript.js"></script>-->
+	<script src="js/pixi.min.js"></script>
+	
+	<script src="js/datascript.js"></script>
+
+	<script src="js/pixiscript.js"></script>
+	<script src="js/script.js"></script>
+</body>
+
+</html>

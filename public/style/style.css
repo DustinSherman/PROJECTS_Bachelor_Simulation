@@ -1,0 +1,382 @@
+@font-face {
+  font-family: 'InconsolataExpanded-Light';
+  src: url("../assets/font/InconsolataExpanded-Light.ttf");
+}
+
+@font-face {
+  font-family: 'InconsolataSemiCondensed-Black';
+  src: url("../assets/font/InconsolataSemiCondensed-Black.ttf");
+}
+
+@font-face {
+  font-family: 'InconsolataSemiExpanded-ExtraLight';
+  src: url("../assets/font/InconsolataSemiExpanded-ExtraLight.ttf");
+}
+
+@font-face {
+  font-family: 'InconsolataSemiExpanded-SemiBold';
+  src: url("../assets/font/InconsolataSemiExpanded-SemiBold.ttf");
+}
+
+@font-face {
+  font-family: 'InconsolataCondensed-Black';
+  src: url("../assets/font/InconsolataCondensed-Black.ttf");
+}
+
+body.loading #loader {
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+}
+
+#loader {
+  background: #1e1e1e;
+  background: -webkit-gradient(linear, left bottom, left top, color-stop(45%, #0e0e0e), color-stop(50%, #111111), color-stop(55%, #0e0e0e));
+  background: linear-gradient(0deg, #0e0e0e 45%, #111111 50%, #0e0e0e 55%);
+  position: relative;
+  -webkit-transition: opacity .5s ease, height .5s ease;
+  transition: opacity .5s ease, height .5s ease;
+  height: 0;
+  opacity: 0;
+  position: absolute;
+  width: 100%;
+}
+
+#loader #loader-percent {
+  font-family: 'InconsolataCondensed-Black', 'Lucida Console', Monaco, monospace;
+  color: #fff;
+  text-align: center;
+  width: 100%;
+  display: block;
+  position: absolute;
+  top: calc(50% - 20px);
+}
+
+#loader #loader-bar {
+  background: #fff;
+  height: 2px;
+  position: absolute;
+  top: calc(50% - 1px);
+  left: 0;
+}
+
+body.loading header .controls button {
+  opacity: .4;
+}
+
+body.loading header .controls .overlay {
+  display: block;
+}
+
+header {
+  background: #1e1e1e;
+  height: auto;
+  padding: 20px;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+  color: #fff;
+}
+
+header .hamburger {
+  z-index: 80;
+}
+
+header .info,
+header .controls,
+header #timeline {
+  margin-bottom: 20px;
+}
+
+header .info {
+  float: right;
+  text-align: right;
+}
+
+header .info span {
+  display: block;
+}
+
+header .info .headline {
+  font-family: 'InconsolataSemiExpanded-SemiBold', 'Lucida Console', Monaco, monospace;
+}
+
+header .info #iteration,
+header .info #date {
+  font-family: 'InconsolataSemiExpanded-ExtraLight', 'Lucida Console', Monaco, monospace;
+}
+
+header .controls {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  clear: both;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+  -webkit-box-align: middle;
+      -ms-flex-align: middle;
+          align-items: middle;
+  position: relative;
+}
+
+header .controls .overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: none;
+  width: 100%;
+  height: 100%;
+  z-index: 20;
+  background: none;
+}
+
+header .controls button {
+  width: 24px;
+  height: 24px;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-color: none;
+}
+
+header .controls button#stop {
+  background-image: url("../assets/automatauniversalis.stack.svg#stop");
+}
+
+header .controls button#stop:hover {
+  background-image: url("../assets/automatauniversalis.stack.svg#stop-hover");
+}
+
+header .controls button#playpause {
+  background-image: url("../assets/automatauniversalis.stack.svg#pause");
+}
+
+header .controls button#playpause:hover {
+  background-image: url("../assets/automatauniversalis.stack.svg#pause-hover");
+}
+
+header .controls button#playpause.active {
+  background-image: url("../assets/automatauniversalis.stack.svg#play");
+}
+
+header .controls button#playpause.active:hover {
+  background-image: url("../assets/automatauniversalis.stack.svg#play-hover");
+}
+
+header .controls button#fastbackward, header .controls button#fastforward {
+  background-image: url("../assets/automatauniversalis.stack.svg#fast");
+}
+
+header .controls button#fastbackward:hover, header .controls button#fastforward:hover {
+  background-image: url("../assets/automatauniversalis.stack.svg#fast-hover");
+}
+
+header .controls button#fastforward {
+  -webkit-transform: rotate(180deg);
+          transform: rotate(180deg);
+}
+
+header .controls #speed {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  font-family: 'InconsolataCondensed-Black', 'Lucida Console', Monaco, monospace;
+}
+
+header #timeline {
+  position: relative;
+  height: 20px;
+}
+
+header #timeline #line,
+header #timeline #marker {
+  background: #fff;
+}
+
+header #timeline #line:hover,
+header #timeline #marker:hover {
+  cursor: pointer;
+}
+
+header #timeline #line {
+  width: 100%;
+  height: 3px;
+  position: absolute;
+  bottom: 0;
+}
+
+header #timeline #marker {
+  height: 20px;
+  width: 6px;
+  position: absolute;
+  left: 0;
+}
+
+header .time {
+  font-family: 'InconsolataExpanded-Light', 'Lucida Console', Monaco, monospace;
+}
+
+header .time #frames,
+header .time #realtime {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+header br {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  header {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
+  }
+  header .hamburger {
+    -webkit-box-ordinal-group: 2;
+        -ms-flex-order: 1;
+            order: 1;
+    -ms-flex-preferred-size: 10%;
+        flex-basis: 10%;
+  }
+  header .controls {
+    -webkit-box-ordinal-group: 3;
+        -ms-flex-order: 2;
+            order: 2;
+    -ms-flex-preferred-size: 60%;
+        flex-basis: 60%;
+    -webkit-box-pack: space-evenly;
+        -ms-flex-pack: space-evenly;
+            justify-content: space-evenly;
+  }
+  header .controls #speed {
+    -webkit-box-align: unset;
+        -ms-flex-align: unset;
+            align-items: unset;
+    padding-top: 4px;
+  }
+  header .info {
+    -webkit-box-ordinal-group: 4;
+        -ms-flex-order: 3;
+            order: 3;
+    -ms-flex-preferred-size: 30%;
+        flex-basis: 30%;
+  }
+  header #timeline {
+    -webkit-box-ordinal-group: 5;
+        -ms-flex-order: 4;
+            order: 4;
+    -ms-flex-preferred-size: 100%;
+        flex-basis: 100%;
+  }
+  header .time {
+    -webkit-box-ordinal-group: 6;
+        -ms-flex-order: 5;
+            order: 5;
+    -ms-flex-preferred-size: 100%;
+        flex-basis: 100%;
+  }
+}
+
+#nav {
+  position: absolute;
+  width: 200px;
+  left: -200px;
+  height: 100%;
+  -webkit-transition: left .5s ease;
+  transition: left .5s ease;
+  background: #000;
+  z-index: 40;
+  padding: 80px 20px 20px;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+}
+
+#nav.is-open {
+  left: 0;
+}
+
+#nav ul {
+  margin: 0;
+  padding: 0;
+}
+
+#nav li {
+  list-style-type: none;
+  padding: 0;
+  margin-bottom: 10px;
+}
+
+#nav li a {
+  text-transform: uppercase;
+  color: #fff;
+  font-family: 'InconsolataSemiExpanded-ExtraLight', 'Lucida Console', Monaco, monospace;
+  font-size: 1.2rem;
+}
+
+footer {
+  position: absolute;
+  bottom: 0;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  max-width: 100%;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+body {
+  background: #000;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-flow: column;
+          flex-flow: column;
+  font-size: 14px;
+}
+
+header {
+  -webkit-box-flex: 0;
+      -ms-flex: 0 1 auto;
+          flex: 0 1 auto;
+}
+
+#wrapper {
+  -webkit-box-flex: 1;
+      -ms-flex: 1 1 auto;
+          flex: 1 1 auto;
+  height: auto;
+  position: relative;
+}
+
+button,
+button:focus,
+button:active,
+button:hover {
+  border: 0;
+  outline: 0 !important;
+  border-radius: 0 !important;
+  padding: 0;
+  margin: 0;
+  background: none;
+}
+
+button:hover {
+  cursor: pointer;
+}
+
+a {
+  text-decoration: none;
+}
+/*# sourceMappingURL=style.css.map */
