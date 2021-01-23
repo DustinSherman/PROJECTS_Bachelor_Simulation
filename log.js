@@ -447,10 +447,10 @@ function logCellularAutomataAnimate(center, size, form) {
     string += " " + size;
     */
 
-    let form = form == 0 ? "Rectangle" : "Circle";
+    let formString = form == 0 ? "Rectangle" : "Circle";
 
     string += "\r\n" + "      " + "  " + "caAnimate ";
-    string += "Pos " + center + " size " + size + " form " + form;
+    string += "Pos " + center + " size " + size + " form " + formString;
 
     if (caAnimateArray[size] == undefined) {
         caAnimateArray[size] = 1;

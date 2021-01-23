@@ -14,7 +14,7 @@ const data = require("./data.js");
 const log = require("./log.js");
 
 // VARIABLES
-let simulate = false;
+let simulate = true;
 let timeEnd = 7200;
 let fieldWidth = 768;
 let logData = true;
