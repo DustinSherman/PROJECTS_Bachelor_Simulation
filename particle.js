@@ -6,7 +6,7 @@ const geometric = require("./geometric.js");
 const simulation = require("./simulation.js");
 const effects = require("./effects.js");
 const cellularAutomata = require("./cellularautomata.js");
-const caRules = require("./cellularautomataRules.js");
+const caRules = require("./cellularautomatarules.js");
 const log = require("./log.js");
 
 let velocityMaxAbs = .6;
