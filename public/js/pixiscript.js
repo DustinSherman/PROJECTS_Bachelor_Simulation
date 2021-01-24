@@ -45,7 +45,7 @@ const fluidCellContainer = new PIXI.Container();
 // trails
 let currentParticleTrails = [];
 let particleTrailLines = [];
-let trailStroke = .2;
+let trailStroke = .6;
 
 // INIT
 let app = new Application({
@@ -319,9 +319,17 @@ function drawCellularAutomata() {
 
 // ////////////////////////////// PARTICLE TRAILS //////////////////////////////
 
+/*
+    The first value of the saved particleTrailData is the index of the particle, the second value the length of the trail and the third value the duration
+    of the trail being visible. We also add the trailLength a second time to subtract it from the trailoop to make the trail "grow" from 0 to its designated 
+    length.
+*/
+
 function drawParticleTrails() {
     for (let i = 0; i < particleTrails[timePassed].length; i++) {
-        currentParticleTrails.push(particleTrails[timePassed][i]);
+        let currentParticleTrailData = [particleTrails[timePassed][i][0], particleTrails[timePassed][i][1], particleTrails[timePassed][i][2], particleTrails[timePassed][i][1]];
+
+        currentParticleTrails.push(currentParticleTrailData);
 
         particleTrailLines.push(new PIXI.Graphics());
 
@@ -345,9 +353,9 @@ function drawParticleTrails() {
             if (particles[timePassed][index] != undefined) {
                 particleTrailLines[i].moveTo(parseFloat(particles[timePassed][index][1]), parseFloat(particles[timePassed][index][2]));
 
-                let trailLength = Math.min(currentParticleTrails[i][1], timePassed) + (Math.min(currentParticleTrails[i][2], 0));
+                let trailLength = currentParticleTrails[i][1];
     
-                for (let j = 1; j < trailLength; j++) {
+                for (let j = 1; j < trailLength - currentParticleTrails[i][3]; j++) {
                     if (particles[timePassed - j][index] != undefined) {
                         let pos = [parseFloat(particles[timePassed - j][index][1]), parseFloat(particles[timePassed - j][index][2])];
                         let prevPos = [parseFloat(particles[timePassed - j + 1][index][1]), parseFloat(particles[timePassed - j + 1][index][2])];
@@ -391,6 +399,11 @@ function drawParticleTrails() {
     
             // Reduce the timer of the trail
             currentParticleTrails[i][2]--;
+
+            // Reduce the trailLengthReduction if its greater than 0
+            if (currentParticleTrails[i][3] > 0) {
+                currentParticleTrails[i][3]--;
+            }
         }
     }
 }

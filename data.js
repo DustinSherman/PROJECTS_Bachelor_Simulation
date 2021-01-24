@@ -5,7 +5,7 @@ const fs = require('fs');
 const server = require("./server.js");
 const simulation = require("./simulation.js");
 
-let saveFreq = 240;
+let saveFreq = 120;
 exports.saveFreq = saveFreq;
 
 // DataObjects

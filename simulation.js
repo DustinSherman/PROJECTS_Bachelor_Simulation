@@ -199,7 +199,12 @@ function saveSetupData() {
 
 	tmpData = JSON.stringify(tmpData);
 
-	// Create Folder if it doesnt exits yet
+	// Create 'data'-Folder and project-folder if it doesnt exits yet
+	let dataDir = 'public/data/';
+	if (!fs.existsSync(dataDir)) {
+		fs.mkdirSync(dataDir);
+	}
+
 	let dir = 'public/data/' + startHexString + '/';
 	if (!fs.existsSync(dir)) {
 		fs.mkdirSync(dir);
@@ -368,7 +373,7 @@ function gatherData() {
 		process.stdout.clearLine();
 		process.stdout.cursorTo(0);
 
-		let realTimePassed = Math.floor((Date.now() - realtimeStart)/60000) + "m " + (Math.floor((Date.now() - realtimeStart)/1000) % 60) + "s " + ((Date.now() - realtimeStart) % 1000) + "ms";
+		let realTimePassed = Math.floor(Math.floor((Date.now() - realtimeStart)/60000)/60) + "h " + (Math.floor((Date.now() - realtimeStart)/60000) % 60) + "m " + (Math.floor((Date.now() - realtimeStart)/1000) % 60) + "s " + ((Date.now() - realtimeStart) % 1000) + "ms";
 		let elapsedTime = Math.floor((Date.now() - realtimeStart)/1000) - prevTime;
 		fps = data.saveFreq/elapsedTime;
 		prevTime = Math.floor((Date.now() - realtimeStart)/1000);
@@ -378,7 +383,7 @@ function gatherData() {
 		let saveString = "Saved."
 		saveString += " Time " + timePassed + "/" + timeEnd + " (" + data.saveFreq + ").";
 		saveString += " Realtime " + realTimePassed + " FPS " + fps.toFixed(2);
-		saveString += " RemainingTime " + Math.floor(timeLeft/60) + "m " + Math.floor(timeLeft % 60) + "s";
+		saveString += " RemainingTime " + Math.floor(timeLeft/3600) + "h " + (Math.floor(timeLeft/60) % 60) + "m " + Math.floor(timeLeft % 60) + "s";
 
 		console.log(saveString);
 	}

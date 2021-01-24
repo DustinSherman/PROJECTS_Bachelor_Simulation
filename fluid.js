@@ -366,3 +366,18 @@ function changeFluidCellPolarity(index, val) {
 }
 
 exports.changeFluidCellPolarity = changeFluidCellPolarity;
+
+function getFluidCellTorus(index) {
+    let fluidCellCount = simulation.fieldWidth/fluidCellResolution;
+    let target = index;
+
+    if (index < 0) {
+        target += fluidCellCount;
+    } else if (index >= fluidCellCount) {
+        target -= fluidCellCount;
+    }
+
+    return target;
+}
+
+exports.getFluidCellTorus = getFluidCellTorus;

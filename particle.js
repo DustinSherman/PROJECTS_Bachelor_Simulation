@@ -7,6 +7,7 @@ const simulation = require("./simulation.js");
 const effects = require("./effects.js");
 const cellularAutomata = require("./cellularautomata.js");
 const caRules = require("./cellularautomatarules.js");
+const fluid = require("./fluid.js");
 const log = require("./log.js");
 
 let velocityMaxAbs = .6;
@@ -426,7 +427,7 @@ class Particle {
 
 			if (reactionResult == 0) {
 				size = Math.floor(size * 2/3);
-				let trailLength = Math.floor(1 + Math.abs(this.state)/4 + (simulation.stateMax - lowestAkin)/4) * 8;
+				let trailLength = Math.floor(1 + Math.abs(this.state)/4 + (simulation.stateMax - lowestAkin)/4) * 24;
 
 				this.setTrails(center, size, trailLength, binaryResult);
 			} else if (reactionResult == 1) {
@@ -472,7 +473,7 @@ class Particle {
 						let val = this.state > 0 ? 1 : -1;
 						val = val * Math.floor((Math.abs(this.state) - 1)/2);
 	
-						simulation.fluid.changeFluidCellPolarity(index, val);
+						fluid.changeFluidCellPolarity(fluid.getFluidCellTorus(index), val);
 					}
 				}
 			}
@@ -515,7 +516,7 @@ class Particle {
 			let tmpDir = geometric.setMag(tmpVelocity, fluidVelocityMag);
 			tmpDir = geometric.rotate(tmpDir, angleStep * i);
 
-			simulation.fluid.addVelocity(tmpDir, fluidSize, [center[0] + tmpDir[0]/2, center[1] + tmpDir[1]/2]);
+			fluid.addVelocity(tmpDir, fluidSize, [center[0] + tmpDir[0]/2, center[1] + tmpDir[1]/2]);
 		}
 
 		if (simulation.logData) {
