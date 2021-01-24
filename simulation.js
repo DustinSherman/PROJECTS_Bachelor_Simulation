@@ -15,7 +15,7 @@ const log = require("./log.js");
 
 // VARIABLES
 let simulate = true;
-let timeEnd = 14400;
+let timeEnd = 21600;
 let fieldWidth = 768;
 let logData = true;
 // Particle Values
