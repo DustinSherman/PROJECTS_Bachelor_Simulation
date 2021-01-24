@@ -464,7 +464,7 @@ class Particle {
 	
 					let dist = geometric.dist([i, j], [fluidCellCenter[0], fluidCellCenter[1]]);
 					if (dist <= radius) {
-						let index = i + j * (simulation.fieldWidth/simulation.fluidCellResolution);
+						let index = fluid.getFluidCellTorus(i) + fluid.getFluidCellTorus(j) * (simulation.fieldWidth/simulation.fluidCellResolution);
 						/*
 						let val = radius - Math.floor(dist);
 						val = this.state > 0 ? val : -val;
@@ -473,7 +473,7 @@ class Particle {
 						let val = this.state > 0 ? 1 : -1;
 						val = val * Math.floor((Math.abs(this.state) - 1)/2);
 	
-						fluid.changeFluidCellPolarity(fluid.getFluidCellTorus(index), val);
+						fluid.changeFluidCellPolarity(index, val);
 					}
 				}
 			}
