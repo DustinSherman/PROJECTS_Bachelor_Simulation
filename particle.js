@@ -373,19 +373,15 @@ class Particle {
 
 			CA Complete (CAC)	CA Animate (CAA)	CA Neighbourhood (CAN)	CA Rule (CAR)	Trails (T)
 
+			# Normal Phase
+
 			Lowest Akin / State	| 1/-1	| 2/-2	| 3/-3	| 4/-4	| 5/-5	| 6/-6	| 7/-7	| 8/-8	| 9/-9	| 10/-10	| 11/-11	| 12/-12
 			0					|		|		|		| T		| CAC	| CAC	| CAC	| CAN	| CAA	| CAA		| CAA		|
 			1					| X		|		|		|		| T		| CAC	| CAC	| CAR	| CAR	| CAA		| CAA		|
 			2					| X 	| X		|		|		|		| T		| CAC	| T 	| CAN  	| CAN		| CAA		|	
 			3					| X		| X		| X		|		|		|		| T		|   	| T 	| CAR  		| CAR		|
 			4					| X		| X		| X		| X		|		|		|		| 		|   	| T  		| CAN  		|		
-			5					| X		| X		| X		| X		| X		|		|		|		| 		|   		| T  		|									
-			6					| X		| X		| X		| X		| X		| X		|		|		|		| 			|   		|		
-			7					| X		| X		| X		| X		| X		| X		| X		|		|		|			| 			|		
-			8					| X		| X		| X		| X		| X		| X		| X		| X		|		|			|			|		
-			9					| X		| X		| X		| X		| X		| X		| X		| X		| X		|			|			|		
-			10					| X		| X		| X		| X		| X		| X		| X		| X		| X		| X			|			|		
-			11					| X		| X		| X		| X		| X		| X		| X		| X		| X		| X			| X			|		
+			5					| X		| X		| X		| X		| X		|		|		|		| 		|   		| T  		|
 		*/
 
 		// First value is the absolute state and the second value is the lowestAkin
@@ -487,41 +483,48 @@ class Particle {
 			Reactioncount. In general the force varies according to the state. It is highest with the half of maxstate and lowest at max state and lower
 			at the starting state.
 
-			| State | 1  | 2 | 3  | 4 | 5  | 6 | 7  | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
-			| Multi |2.25|2.5|2.75| 3 |3.25|3.5|3.75| 4 | 4 |3.50| 3  | 2.5| 2  | 1.5| 1  | 0.5|
+			| State | 1  | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9  | 10 | 11 | 12 |
+			| Multi | 0  | 1 | 2 | 3 | 4 | 2 | 1 | .5| .25| 0  | 0  | X  |
 		*/
 		
 		let fluidVelocityMag = simulation.fluidResolution / 4;
 		let fluidSize = simulation.fluidResolution;
-		let fluidMultiplier = .8;
+		// let fluidMultiplier = .8;
+		let fluidMultiplierArray = [0, 1, 2, 3, 4, 2, 1, .5, .25, 0, 0, 0];
 
+		/*
 		fluidMultiplier = (-Math.abs(Math.abs(this.state) - simulation.stateMax/2 - .5) + simulation.stateMax/2)/2 + .25;
 		if (Math.abs(this.state) <= simulation.stateMax/2) {
 			fluidMultiplier += (simulation.stateMax/4 - fluidMultiplier)/2;
 		}
+		*/
 
-		fluidVelocityMag *= fluidMultiplier;
-		fluidSize *= fluidMultiplier;
+		let fluidMultiplier = fluidMultiplierArray[Math.abs(this.state)];
 
-		// If Rection Particle Count is higher then reactionCount
-		if (this.tmpCalcParticles.length > this.reactionCount) {
-			fluidVelocityMag *= (this.tmpCalcParticles.length - this.reactionCount)/2 + 1;
-			fluidSize *= ((this.tmpCalcParticles.length - this.reactionCount)/2 + 1);
-		}
-
-		let newParticleCount = Math.floor(this.tmpCalcParticles.length/2);
-		let angleStep = (Math.PI * 2)/newParticleCount;
-
-		for (let i = 0; i < newParticleCount; i++) {
-			let tmpDir = geometric.setMag(tmpVelocity, fluidVelocityMag);
-			tmpDir = geometric.rotate(tmpDir, angleStep * i);
-
-			fluid.addVelocity(tmpDir, fluidSize, [center[0] + tmpDir[0]/2, center[1] + tmpDir[1]/2]);
-		}
-
-		if (simulation.logData) {
-			log.logReactionResult(this);
-			log.logFluidVelocity(center, fluidSize, fluidVelocityMag);
+		if (fluidMultiplier != 0) {
+			fluidVelocityMag *= fluidMultiplier;
+			fluidSize *= fluidMultiplier;
+	
+			// If Rection Particle Count is higher then reactionCount
+			if (this.tmpCalcParticles.length > this.reactionCount) {
+				fluidVelocityMag *= (this.tmpCalcParticles.length - this.reactionCount)/2 + 1;
+				fluidSize *= ((this.tmpCalcParticles.length - this.reactionCount)/2 + 1);
+			}
+	
+			let newParticleCount = Math.floor(this.tmpCalcParticles.length/2);
+			let angleStep = (Math.PI * 2)/newParticleCount;
+	
+			for (let i = 0; i < newParticleCount; i++) {
+				let tmpDir = geometric.setMag(tmpVelocity, fluidVelocityMag);
+				tmpDir = geometric.rotate(tmpDir, angleStep * i);
+	
+				fluid.addVelocity(tmpDir, fluidSize, [center[0] + tmpDir[0]/2, center[1] + tmpDir[1]/2]);
+			}
+	
+			if (simulation.logData) {
+				log.logReactionResult(this);
+				log.logFluidVelocity(center, fluidSize, fluidVelocityMag);
+			}
 		}
 	}
 	

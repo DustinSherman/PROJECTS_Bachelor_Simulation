@@ -15,7 +15,7 @@ const log = require("./log.js");
 
 // VARIABLES
 let simulate = true;
-let timeEnd = 21600;
+let timeEnd = 2400;
 let fieldWidth = 768;
 let logData = true;
 // Particle Values
@@ -27,7 +27,7 @@ const fluidResolution = 8;
 const fluidParticleSpeedReduction = .8;
 // FluidCells Values
 const simulateFluidCells = true;
-const fluidCellResolution = 8; // Must be multiply or the same ans fluidResolution
+const fluidCellResolution = 8; // Must be multiply or the same as fluidResolution
 const fluidCellRadius = 28;
 // Cellular Automata Values
 const caResolution = 1;
@@ -51,10 +51,14 @@ exports.fluidQuadtreeCapacity = fluidQuadtreeCapacity;
 // Timing
 // 5m / 24 fps => 7200
 // 10m / 24 fps => 14400
+// 11m / 24fps => 15840
+// 13.30 m / 24 fps => 19440
 // 15m / 24 fps => 21600
 exports.timeEnd = timeEnd;
 let realtimeStart = Date.now();
 exports.realtimeStart = realtimeStart;
+let timeSteps = [15840, 19440];
+exports.timeSteps = timeSteps;
 
 // ////////// PARTICLES
 let startBinString = '';
@@ -272,13 +276,13 @@ function draw() {
 			particleStats = gatherParticleInfo();
 			exports.particleStats = particleStats;
 
+			timePassed++;
+			exports.timePassed = timePassed;
+
 			if (logData) {
 				// Log Particle Data
 				log.saveParticles(64);
 			}
-
-			timePassed++;
-			exports.timePassed = timePassed;
 		}
 
 		if (timePassed >= timeEnd) {
@@ -322,8 +326,8 @@ function gatherData() {
 		let tmpData = [];
 		if (!particle.merged) {
 			tmpData.push(particle.state);
-			tmpData.push(particle.pos[0].toFixed(decimals));
-			tmpData.push(particle.pos[1].toFixed(decimals));
+			tmpData.push(parseFloat(particle.pos[0].toFixed(decimals)));
+			tmpData.push(parseFloat(particle.pos[1].toFixed(decimals)));
 			tmpData.push(particle.mergedParticles.length);
 		}
 		particleData.push(tmpData);
@@ -336,8 +340,8 @@ function gatherData() {
 		let tmpData = [];
 
 		tmpData.push(fluid.particles[i].index);
-		tmpData.push(fluid.particles[i].pos[0].toFixed(decimals));
-		tmpData.push(fluid.particles[i].pos[1].toFixed(decimals));
+		tmpData.push(parseFloat(fluid.particles[i].pos[0].toFixed(decimals)));
+		tmpData.push(parseFloat(fluid.particles[i].pos[1].toFixed(decimals)));
 
 		fluidData.push(tmpData);
 	}

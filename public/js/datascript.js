@@ -72,7 +72,7 @@ function loadFile(index, dataObject, fileName) {
             }
         })
         .then(function() {
-            console.log("Loading", fileName, index, (index / (timeEnd / saveFreq)) * 100);
+            // console.log("Loading", fileName, index, (index / (timeEnd / saveFreq)) * 100);
 
             loaderVal += ((saveFreq/timeEnd)/dataObjects.length) * 100;
             loaderbarElement.style.width = loaderVal + '%';
@@ -81,7 +81,7 @@ function loadFile(index, dataObject, fileName) {
             if (index + 1 < timeEnd / saveFreq) {
                 loadFile(index + 1, dataObject, fileName);
             } else {
-                console.log("Finished", fileName, timeEnd);
+                // console.log("Finished", fileName, timeEnd);
 
                 // Check if all data is gathered
                 let finished = true;

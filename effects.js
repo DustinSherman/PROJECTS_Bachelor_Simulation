@@ -91,8 +91,13 @@ function setTrails(pos, size, trailLength, duration) {
 	});
 }
 
+function setShockwave(pos, strength) {
+
+}
+
 var effects = module.exports = {
 	explosionSetup,
 	explosion,
-	setTrails
+	setTrails,
+	setShockwave
 }

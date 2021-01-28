@@ -104,11 +104,11 @@ function animate() {
 }
 
 function draw() {
-    drawFluidCells();
+    // drawFluidCells();
     drawParticles();
-    drawParticleTrails();
-    drawFluid();
-    drawCellularAutomata();
+    // drawParticleTrails();
+    // drawFluid();
+    // drawCellularAutomata();
 
     if (play) {
         timePassed++;
@@ -135,6 +135,13 @@ function drawParticles() {
 
         app.stage.addChild(particleSprites[i]);
         particleSprites[i].scale.set(scale, scale);
+    }
+
+    // Delete merged particles
+    for (let i = particleSprites.length - 1; i >= 0; i--) {
+        if (particles[timePassed][i] == undefined) {
+            particleSprites[i].splice(i, 1);
+        }
     }
 
     for (let i = 0; i < particles[timePassed].length; i++) {
@@ -229,13 +236,14 @@ function drawFluid() {
 
 function drawFluidCells() {
     for (let i = 0; i < fluidCells[timePassed].length; i++) {
-        let index = fluidCells[timePassed][i][0];
-        let fluidColorIndex = Math.min(fluidCells[timePassed][i][1], fluidColorLength - 1);
-        let fluidColorPolarityIndex = Math.min(Math.max(fluidCells[timePassed][i][2], -fluidColorPolarityLength), fluidColorPolarityLength) + fluidColorPolarityLength;
-
-        let color = fluidCellColors[fluidColorPolarityIndex][fluidColorIndex];
-
-        fluidCellSprites[index].tint = color;
+        if (fluidCells[timePassed][i][0] != undefined) {
+            let fluidColorIndex = Math.min(fluidCells[timePassed][i][0], fluidColorLength - 1);
+            let fluidColorPolarityIndex = Math.min(Math.max(fluidCells[timePassed][i][1], -fluidColorPolarityLength), fluidColorPolarityLength) + fluidColorPolarityLength;
+    
+            let color = fluidCellColors[fluidColorPolarityIndex][fluidColorIndex];
+    
+            fluidCellSprites[i].tint = color;
+        }
     }
 }
 

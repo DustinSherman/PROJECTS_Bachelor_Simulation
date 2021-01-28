@@ -14,13 +14,15 @@ let fluidData = [];
 let fluidCellData = [];
 let cellularAutomataData = [];
 let trailsData = [];
+let shockwaveData = [];
 
-function addData(tmpParticleData, tmpFluidData, tmpFluidCellData, tmpcaData, tmpTrailsData) {
+function addData(tmpParticleData, tmpFluidData, tmpFluidCellData, tmpcaData, tmpTrailsData, tmpShockwaveData) {
     particleData.push(tmpParticleData);
     fluidData.push(tmpFluidData);
     fluidCellData.push(tmpFluidCellData);
     cellularAutomataData.push(tmpcaData);
     trailsData.push(tmpTrailsData);
+    shockwaveData.push(tmpShockwaveData);
 }
 
 exports.addData = addData;
@@ -32,12 +34,14 @@ function save(index) {
     saveFile(index, fluidCellData, 'fluidCells');
     saveFile(index, cellularAutomataData, 'cellularAutomata');
     saveFile(index, trailsData, 'trails');
+    saveFile(index, shockwaveData, 'shockwaves');
 
     particleData = [];
     fluidData = [];
     fluidCellData = [];
     cellularAutomataData = [];
     trailsData = [];
+    shockwaveData = [];
 }
 
 exports.save = save;

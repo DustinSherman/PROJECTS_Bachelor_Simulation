@@ -104,8 +104,23 @@ function logBaseSettings() {
     settingsString += "\r\n";
     
     // Quadtree Settings
-    settingsString += "\r\n" + "Quad Tree";
-    settingsString += "\r\n" + "  " + "Fluid Particle Capacity " + simulation.fluidQuadtreeCapacity;
+    // settingsString += "\r\n" + "Quad Tree";
+    // settingsString += "\r\n" + "  " + "Fluid Particle Capacity " + simulation.fluidQuadtreeCapacity;
+
+    // Timing Settings
+    let timingNames = ['ExpandPhase', 'ShrinkPhase'];
+    settingsString += "\r\n" + "Timing";
+    settingsString += "\r\n" + "  ";
+    for (let i = 0; i < simulation.timeSteps.length; i++) {
+        if (timingNames[i] != undefined) {
+            settingsString += timingNames[i] + " ";
+        }
+        settingsString += simulation.timeSteps[i];
+
+        if (i != simulation.timeSteps.length - 1) {
+            settingsString += ", ";
+        }
+    }
 
     settingsString += "\r\n";
 
