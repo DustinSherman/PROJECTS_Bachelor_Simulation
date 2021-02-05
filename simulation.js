@@ -8,6 +8,7 @@ const quadtree = require("./quadtree.js");
 const particle = require("./particle.js");
 const fluid = require("./fluid.js");
 const ca = require("./cellularautomata.js");
+const caRules = require("./cellularautomatarules.js");
 const geometric = require("./geometric.js");
 const effects = require("./effects.js");
 const data = require("./data.js");
@@ -15,7 +16,7 @@ const log = require("./log.js");
 
 // VARIABLES
 let simulate = true;
-let timeEnd = 2400;
+let timeEnd = 21600;
 let fieldWidth = 768;
 let logData = true;
 // Particle Values
@@ -59,6 +60,8 @@ let realtimeStart = Date.now();
 exports.realtimeStart = realtimeStart;
 let timeSteps = [15840, 19440];
 exports.timeSteps = timeSteps;
+let phase = 0;
+exports.phase = phase;
 
 // ////////// PARTICLES
 let startBinString = '';
@@ -84,8 +87,13 @@ let preFluidData = [];
 let fluidCellData = [];
 let trailData = [];
 exports.trailData = trailData;
+let shockwaveData = [];
+exports.shockwaveData = shockwaveData;
 let decimals = 1;
+
+// FPS
 let prevTime = 0;
+let prevFrames = 0;
 let fps = 0;
 exports.fps = fps;
 
@@ -93,10 +101,14 @@ exports.fps = fps;
 let fluidTree;
 exports.fluidTree = fluidTree;
 
-// Cellular Automata
-let particleVals = require('./particle-vals.json');
+// Particle
+let particleVals = require('./particlevals.json');
 const Particle = require("./particle.js");
 exports.particleVals = particleVals;
+
+// Cellular Automata
+let caRuleCount = caRules.rules.length;
+let caCurrentRule = caRules.rules.length - 1;
 
 // ////////////////////////////// SETUP
 
@@ -259,8 +271,7 @@ function draw() {
 
 			exports.particles = particles;
 
-			tree = new quadtree([fieldWidth / 2, fieldWidth / 2], fieldWidth, particleQuadtreeCapacity, particles);
-			exports.tree = tree;
+			updateQuadtree();
 
 			// Fluid update
 			fluid.draw();
@@ -269,8 +280,34 @@ function draw() {
 			fluidTree = new quadtree([fieldWidth / 2, fieldWidth / 2], fieldWidth, fluidQuadtreeCapacity, fluid.particles);
 			exports.fluidTree = fluidTree;
 
+			// Fluid Flow Cells update
+			for (let i = 0; i < fluid.flowCells.length; i++) {
+				fluid.flowCells[i].update();
+			}
+
+			for (let i = fluid.flowCells.length - 1; i >= 0; i--) {
+				if (fluid.flowCells[i].duration <= 0) {
+					fluid.flowCells.splice(i, 1);
+				}
+			}
+
 			// Cellular Automata update
 			ca.update();
+
+			// Update phase
+			for (let i = 0; i < timeSteps.length; i++) {
+				if (timePassed == timeSteps[i]) {
+					phase = i + 1;
+
+					if (logData) {
+						log.logNewPhase(phase);
+					}
+				}
+			}
+			// Shrink / End Phase
+			if (phase == timeSteps.length) {
+				shrinkPhase();
+			}
 
 			// Update Particle Statistics
 			particleStats = gatherParticleInfo();
@@ -281,7 +318,7 @@ function draw() {
 
 			if (logData) {
 				// Log Particle Data
-				log.saveParticles(64);
+				log.saveParticles(60);
 			}
 		}
 
@@ -295,6 +332,13 @@ function draw() {
 	}
 };
 
+function updateQuadtree() {
+	tree = new quadtree([fieldWidth / 2, fieldWidth / 2], fieldWidth, particleQuadtreeCapacity, particles);
+	exports.tree = tree;
+}
+
+exports.updateQuadtree = updateQuadtree;
+
 exports.draw = draw;
 
 function particleAction(particle, type) {
@@ -303,12 +347,18 @@ function particleAction(particle, type) {
             particle.calcGrav();
         }
         else if (type == 1) {
-            if (!particle.calced) {
-                particle.calc();
-            }
+			// Dont calculate Reactions or merge in the last phase
+			if (phase < 2) {
+				if (!particle.calced) {
+					particle.calc();
+				}
+			}
         }
         else if (type == 2) {
-            particle.action();
+			// Dont execute Reactions or merge in the last phase
+			if (phase < 2) {
+				particle.action();
+			}
         }
         else if (type == 3) {
             particle.move();
@@ -319,18 +369,51 @@ function particleAction(particle, type) {
     }
 }
 
+function shrinkPhase() {
+	// Move every particle to the middle
+	particles.forEach(function (particle) {
+		if (!particle.merged) {
+			let dir = [fieldWidth/2 - particle.pos[0], fieldWidth/2 - particle.pos[1]];
+			let distToCenter = geometric.dist([fieldWidth/2, fieldWidth/2], particle.pos);
+
+			let force = distToCenter/(fieldWidth/2);
+			dir = geometric.setMag(dir, force);
+
+			particle.addAcceleration(dir);
+		}
+	});
+
+	// Decrease Rule of CA
+	let ruleDecreaseFreq = Math.floor((timeEnd - timeSteps[timeSteps.length - 1])/caRuleCount);
+
+	if ((timePassed - timeSteps[timeSteps.length - 1]) % ruleDecreaseFreq == 0) {
+		if (caCurrentRule > 0) {
+			caCurrentRule--;
+		}
+
+		ca.cells.forEach(function (cell) {
+			if (cell.rule > caCurrentRule) {
+				cell.rule = caCurrentRule;
+			}
+		});
+	}
+}
+
 function gatherData() {
 	// Save Data
 	particleData = [];
 	particles.forEach(function (particle) {
 		let tmpData = [];
 		if (!particle.merged) {
-			tmpData.push(particle.state);
 			tmpData.push(parseFloat(particle.pos[0].toFixed(decimals)));
 			tmpData.push(parseFloat(particle.pos[1].toFixed(decimals)));
+			tmpData.push(particle.state);
 			tmpData.push(particle.mergedParticles.length);
+		} else {
+			tmpData.push(parseFloat(particle.pos[0].toFixed(decimals)));
+			tmpData.push(parseFloat(particle.pos[1].toFixed(decimals)));
 		}
-		particleData.push(tmpData);
+ 		particleData.push(tmpData);
 	})
 
 	// Gather Fluid Data
@@ -364,11 +447,15 @@ function gatherData() {
 	// Gather Cellular Automata Data
 	let tmpCellularAutmataData = ca.getChangedCells();
 
-	data.addData(particleData, tmpFluidData, fluidCellData, tmpCellularAutmataData, trailData);
+	data.addData(particleData, tmpFluidData, fluidCellData, tmpCellularAutmataData, trailData, shockwaveData);
 
 	// Reset trails Data
 	trailData = [];
 	exports.trailData = trailData;
+
+	// Reset shockwave Data
+	shockwaveData = [];
+	exports.shockwaveData = shockwaveData;
 
 	// Save JSON Files
 	if (((timePassed) % data.saveFreq == 0 && timePassed != 0) || timePassed >= timeEnd) {
@@ -380,6 +467,8 @@ function gatherData() {
 		let realTimePassed = Math.floor(Math.floor((Date.now() - realtimeStart)/60000)/60) + "h " + (Math.floor((Date.now() - realtimeStart)/60000) % 60) + "m " + (Math.floor((Date.now() - realtimeStart)/1000) % 60) + "s " + ((Date.now() - realtimeStart) % 1000) + "ms";
 		let elapsedTime = Math.floor((Date.now() - realtimeStart)/1000) - prevTime;
 		fps = data.saveFreq/elapsedTime;
+		exports.fps = fps;
+
 		prevTime = Math.floor((Date.now() - realtimeStart)/1000);
 
 		let timeLeft = (timeEnd - timePassed)/fps;
@@ -392,6 +481,22 @@ function gatherData() {
 		console.log(saveString);
 	}
 }
+
+let getCurrentFPSPrevTime = 0;
+
+function getCurrentFPS() {
+	let elapsedTime = Math.floor((Date.now() - realtimeStart)/1000) - getCurrentFPSPrevTime;
+	let elapsedFrames = timePassed - prevFrames;
+
+	let currentFPS = elapsedFrames/elapsedTime;
+
+	getCurrentFPSPrevTime = Math.floor((Date.now() - realtimeStart)/1000);
+	prevFrames = timePassed;
+
+	return [currentFPS, elapsedFrames];
+}
+
+exports.getCurrentFPS = getCurrentFPS;
 
 function compareArray(_RawData, _PreRawData) {
 	let data = Array.from(_RawData);

@@ -33,6 +33,13 @@ let fluidCellRadius;
 
 exports.fluidCellData = fluidCellData;
 
+// Flow Cells
+let flowCells = [];
+let flowCellSize = 4;
+let flowfieldStrength = 2;
+exports.flowCells = flowCells;
+exports.flowfieldStrength = flowfieldStrength;
+
 // ////////////////////////////// SETUP
 
 function initParticles() {
@@ -111,7 +118,7 @@ function initFluidCells() {
         let fluidCellCount = rowCount * rowCount;
 
         let pos = [(simulation.fieldWidth/fluidCellResolution) * fluidCellResolution + fluidCellResolution/2, Math.floor(simulation.fieldWidth/fluidCellResolution) * fluidCellResolution + fluidCellResolution/2];
-        let particleBaseCount = simulation.fluidTree.contentParticles(pos, fluidCellRadius).length;
+        let particleBaseCount = simulation.fluidTree.contentParticles(pos, fluidCellRadius, 0).length;
 
         for (i = 0; i < fluidCellCount; i++) {
             fluidCells.push([particleBaseCount, 0]);
@@ -123,6 +130,130 @@ function initFluidCells() {
 }
 
 exports.initFluidCells = initFluidCells;
+
+// ////////////////////////////// CLASSES
+
+
+
+
+
+
+class fluidparticle {
+    constructor(index, pos) {
+        this.pos = [pos[0], pos[1]];
+        this.index = index;
+
+        this.prevPos = [pos[0], pos[1]];
+
+        this.velocity = [0, 0];
+        this.acceleration = [0, 0];
+
+        this.unchanged = true;
+    }
+
+    update() {
+        let col = parseInt(this.pos[0] / resolution);
+        let row = parseInt(this.pos[1] / resolution);
+
+        let cellData = vectorCells[col][row];
+
+        let ax = (this.pos[0] % resolution) / resolution;
+        let ay = (this.pos[1] % resolution) / resolution;
+        
+        this.velocity[0] += (1 - ax) * cellData.xv * 0.05;
+        this.velocity[1] += (1 - ay) * cellData.yv * 0.05;
+        
+        this.velocity[0] += ax * cellData.right.xv * 0.05;
+        this.velocity[1] += ax * cellData.right.yv * 0.05;
+        
+        this.velocity[0] += ay * cellData.down.xv * 0.05;
+        this.velocity[1] += ay * cellData.down.yv * 0.05;
+        
+        this.move();
+    }
+
+    move() {
+        this.velocity = geometric.add(this.velocity, this.acceleration);
+
+        // If particle gets to slow stop it or to fast slow it down
+        if (geometric.mag(this.velocity) < minVelocity) {
+            this.velocity = [0, 0];
+        } else if (geometric.mag(this.velocity) > maxVelocity) {
+            this.velocity = geometric.setMag(this.velocity, maxVelocity);
+        } else {
+            // Slow particle down
+            this.velocity = [this.velocity[0] * particleSpeedReduction, this.velocity[1] * particleSpeedReduction];
+        }
+
+        // Sign out off of fluid Cells
+        let signedOut = false;
+        if (this.velocity[0] != 0 || this.velocity[1] != 0) {
+            signFluidCells(this.pos, -1);
+
+            signedOut = true;
+        }
+
+        this.acceleration = [0, 0];
+
+        // Actualize position
+        this.pos = [getTorus(this.pos[0] + this.velocity[0]), getTorus(this.pos[1] + this.velocity[1])];
+        
+        // Sign in to fluid Cells
+        if (signedOut) {
+            signFluidCells(this.pos, 1);
+        }
+        
+        if (this.velocity[0] == 0 && this.velocity[1] == 0) {
+            this.unchanged = true;
+        } else {
+            this.unchanged = false;
+        }
+    }
+
+    addAcceleration(acceleration) {
+		this.acceleration = [this.acceleration[0] + acceleration[0], this.acceleration[1] + acceleration[1]];
+	}
+}
+
+
+
+
+
+
+
+
+
+function particle(index, x, y) {
+    this.index = index;
+    this.x = x;
+    this.y = y;
+
+    this.pos = [x, y];
+    this.pPos = [x, y];
+
+    this.velocity = [0, 0];
+    this.acceleration = [0, 0];
+
+    this.unchanged = true;
+
+
+}
+
+function cell(index, x, y, res) {
+    this.index = index;
+    this.x = x;
+    this.y = y;
+    
+    this.r = res;
+
+    this.col = 0;
+    this.row = 0;
+    
+    this.xv = 0;
+    this.yv = 0;
+
+    this.pressure = 0;
+}
 
 // ////////////////////////////// LOOP
 
@@ -156,45 +287,12 @@ function draw() {
     if (simulation.simulateFluidCells) {
         fluidCellData = [];
 
-
-
-
-
-
-
-
-
-
-        /*
-        for (let i = 0; i < fluidCells.length; i++) {
-            let pos = [i % (simulation.fieldWidth/fluidCellResolution) * fluidCellResolution + fluidCellResolution/2, Math.floor(i / (simulation.fieldWidth/fluidCellResolution)) * fluidCellResolution + fluidCellResolution/2];
-
-            let fluidParticleCount = simulation.fluidTree.contentParticles(pos, fluidCellRadius).length;
-
-            if (fluidParticleCount != fluidCells[i][0] || fluidCellsPrevPolarity[i] != fluidCells[i][1]) {
-                fluidCellData.push([fluidParticleCount, fluidCells[i][1]]);
-            } else {
-                fluidCellData.push([]);
-            }
-
-            fluidCells[i][0] = fluidParticleCount;
-        }
-        */
-
-
-
-
-
-
-
         for (let i = 0; i < fluidCells.length; i++) {
             if (fluidCellsPrev[i][0] != fluidCells[i][0] || fluidCellsPrev[i][1] != fluidCells[i][1]) {
-                fluidCellData.push([fluidCells[i][0], fluidCells[i][1]]);
+                fluidCellData.push([i, fluidCells[i][0], fluidCells[i][1]]);
 
                 // Set previous FluidCellData
                 fluidCellsPrev[i] = [fluidCells[i][0], fluidCells[i][1]];
-            } else {
-                fluidCellData.push([]);
             }
         }
 
@@ -208,72 +306,62 @@ exports.draw = draw;
 
 function updateParticle() {
     for (i = 0; i < particles.length; i++) {
+        let signedOut = false;
+
         var p = particles[i];
 
         var col = parseInt(p.pos[0] / resolution);
         var row = parseInt(p.pos[1] / resolution);
 
         var cellData = vectorCells[col][row];
-        
+
         var ax = (p.pos[0] % resolution) / resolution;
         var ay = (p.pos[1] % resolution) / resolution;
         
-        p.xv += (1 - ax) * cellData.xv * 0.05;
-        p.yv += (1 - ay) * cellData.yv * 0.05;
+        p.velocity[0] += (1 - ax) * cellData.xv * 0.05;
+        p.velocity[1] += (1 - ay) * cellData.yv * 0.05;
         
-        p.xv += ax * cellData.right.xv * 0.05;
-        p.yv += ax * cellData.right.yv * 0.05;
+        p.velocity[0] += ax * cellData.right.xv * 0.05;
+        p.velocity[1] += ax * cellData.right.yv * 0.05;
         
-        p.xv += ay * cellData.down.xv * 0.05;
-        p.yv += ay * cellData.down.yv * 0.05;
+        p.velocity[0] += ay * cellData.down.xv * 0.05;
+        p.velocity[1] += ay * cellData.down.yv * 0.05;
+
+        // Add acceleration to velocity
+        p.velocity[0] += p.acceleration[0];
+        p.velocity[1] += p.acceleration[1];
 
         // If particle gets to slow stop it or to fast slow it down
-        if (geometric.mag([p.xv, p.yv] < minVelocity)) {
-            p.xv = 0;
-            p.yv = 0;
-        } else if (geometric.mag([p.xv, p.yv]) > maxVelocity) {
-            p.xv = geometric.setMag([p.xv, p.yv], maxVelocity)[0];
-            p.xv = geometric.setMag([p.xv, p.yv], maxVelocity)[1];
+        if (geometric.mag(p.velocity) < minVelocity) {
+            p.velocity[0] = 0;
+            p.velocity[1] = 0;
+        } else if (geometric.mag(p.velocity) > maxVelocity) {
+            p.velocity[0] = geometric.setMag([p.velocity[0], p.velocity[1]], maxVelocity)[0];
+            p.velocity[1] = geometric.setMag([p.velocity[0], p.velocity[1]], maxVelocity)[1];
         }
-
-
-
-
-
 
         // Sign out off of fluid Cells
-        if (p.xv != 0 || p.yv != 0) {
+        if (p.velocity[0] != 0 || p.velocity[1] != 0) {
             signFluidCells(p.pos, -1);
+
+            signedOut = true;
         }
 
-
-
-
-
-        p.pos = [getTorus(p.pos[0] + p.xv), getTorus(p.pos[1] + p.yv)];
+        // Actualize position
+        p.pos = [getTorus(p.pos[0] + p.velocity[0]), getTorus(p.pos[1] + p.velocity[1])];
         
-
-
-
-
         // Sign in to fluid Cells
-        if (p.xv != 0 || p.yv != 0) {
+        if (signedOut) {
             signFluidCells(p.pos, 1);
         }
-
-
-
-
-
-
-        p.px = p.pos[0];
-        p.py = p.pos[1];
         
-        // Slow particle down
-        p.xv *= particleSpeedReduction;
-        p.yv *= particleSpeedReduction;
+        p.acceleration = [0, 0];
 
-        if (p.xv == 0 && p.yv == 0) {
+        // Slow particle down
+        p.velocity[0] *= particleSpeedReduction;
+        p.velocity[1] *= particleSpeedReduction;
+
+        if (p.velocity[0] == 0 && p.velocity[1] == 0) {
             p.unchanged = true;
         } else {
             p.unchanged = false;
@@ -281,14 +369,14 @@ function updateParticle() {
     }
 }
 
-function addVelocity(_Velocity, _Size, _Pos) {
+function addVelocity(velocity, size, pos) {
     for (i = 0; i < vectorCells.length; i++) {
         var cellDatas = vectorCells[i];
 
         for (j = 0; j < cellDatas.length; j++) {
             var cellData = cellDatas[j];
             
-            changeCellVelocity(cellData, _Velocity[0], _Velocity[1], _Size, _Pos[0], _Pos[1]);
+            changeCellVelocity(cellData, velocity[0], velocity[1], size, pos[0], pos[1]);
             
             updatePressure(cellData);
         }
@@ -297,17 +385,17 @@ function addVelocity(_Velocity, _Size, _Pos) {
 
 exports.addVelocity = addVelocity;
 
-function changeCellVelocity(cellData, mvelX, mvelY, _Size, origin_x, origin_y) {
+function changeCellVelocity(cellData, mvelX, mvelY, size, origin_x, origin_y) {
     var dx = cellData.x - origin_x;
     var dy = cellData.y - origin_y;
     var dist = Math.sqrt(dy * dy + dx * dx);
     
-    if (dist < _Size) {
+    if (dist < size) {
         if (dist < 4) {
-            dist = _Size;
+            dist = size;
         }
         
-        var power = _Size / dist;
+        var power = size / dist;
 
         cellData.xv += mvelX * power;
         cellData.yv += mvelY * power;
@@ -326,7 +414,7 @@ function updatePressure(cellData) {
     
     var pressure_y = (
         cellData.up_left.yv * 0.5
-        + cellData.up.yv
+        + cellData.up.xv
         + cellData.up_right.yv * 0.5
         - cellData.down_left.yv * 0.5
         - cellData.down.yv
@@ -365,38 +453,9 @@ function updateVelocity(cellData) {
     }
 }
 
-function cell(index, x, y, res) {
-    this.index = index;
-    this.x = x;
-    this.y = y;
-    
-    this.r = res;
-
-    this.col = 0;
-    this.row = 0;
-    
-    this.xv = 0;
-    this.yv = 0;
-
-    this.pressure = 0;
-}
-
-function particle(index, x, y) {
-    this.index = index;
-    this.x = this.px = x;
-    this.y = this.py = y;
-
-    this.pos = [x, y];
-    this.pPos = [x, y];
-
-    this.xv = this.yv = 0;
-
-    this.unchanged = true;
-}
-
 function addAcceleration(particle, acceleration) {
-    particle.xv += acceleration[0]
-    particle.yv += acceleration[1];
+    particle.acceleration[0] += acceleration[0];
+    particle.acceleration[1] += acceleration[1];
 }
 
 exports.addAcceleration = addAcceleration;
@@ -408,17 +467,17 @@ function changeFluidCellPolarity(index, val) {
 exports.changeFluidCellPolarity = changeFluidCellPolarity;
 
 function signFluidCells(pos, val) {
-    let areaSize = Math.ceil(fluidCellRadius/fluidCellResolution);
+    let radius = Math.ceil(fluidCellRadius/fluidCellResolution);
     let translatedPos = [Math.floor(pos[0]/fluidCellResolution), Math.floor(pos[1]/fluidCellResolution)];
 
-    for (let i = translatedPos[0] - areaSize; i <= translatedPos[0] + areaSize; i++) {
-        for (let j = translatedPos[1] - areaSize; j <= translatedPos[1] + areaSize; j++) {
-            let cellPos = [i * fluidCellResolution, j * fluidCellResolution];
+    for (let i = translatedPos[0] - radius; i <= translatedPos[0] + radius; i++) {
+        for (let j = translatedPos[1] - radius; j <= translatedPos[1] + radius; j++) {
+            let cellPos = [i * fluidCellResolution + fluidCellResolution/2, j * fluidCellResolution + fluidCellResolution/2];
 
             if (geometric.dist(pos, cellPos) <= fluidCellRadius) {
                 let rowCount = (fieldWidth/fluidCellResolution);
                 let cellIndex = getFluidCellTorus(j) * rowCount + getFluidCellTorus(i);
-
+                
                 fluidCells[cellIndex][0] += val;
             }
         }
@@ -426,28 +485,123 @@ function signFluidCells(pos, val) {
 }
 
 function getTorus(pos) {
-    let target = pos;
-
-    if (pos < 0) {
-        target += simulation.fieldWidth;
-    } else if (pos >= simulation.fieldWidth) {
-        target -= simulation.fieldWidth;
+    while (pos < 0) {
+        pos += simulation.fieldWidth;
     }
 
-    return target;   
+    while (pos >= simulation.fieldWidth) {
+        pos -= simulation.fieldWidth;
+    }
+
+    return pos;   
 }
 
 function getFluidCellTorus(cellPos) {
     let fluidCellCount = simulation.fieldWidth/fluidCellResolution;
-    let target = cellPos;
 
-    if (cellPos < 0) {
-        target += fluidCellCount;
-    } else if (cellPos >= fluidCellCount) {
-        target -= fluidCellCount;
+    while (cellPos < 0) {
+        cellPos += fluidCellCount;
+    } 
+    while (cellPos >= fluidCellCount) {
+        cellPos -= fluidCellCount;
     }
 
-    return target;
+    return cellPos;
 }
 
 exports.getFluidCellTorus = getFluidCellTorus;
+
+class flowCell {
+	constructor(pos, size, duration, dir) {
+		this.pos = [pos[0], pos[1]];
+		this.size = size;
+		this.duration = duration;
+		this.dir = dir;
+	}
+
+	update() {
+		let tmpFluidParticles = [];
+		let self = this;
+
+		tmpFluidParticles = simulation.fluidTree.contentParticles(this.pos, this.size, 1);
+
+		tmpFluidParticles.forEach(function(fluidParticle) {
+			addAcceleration(fluidParticle, self.dir);
+		})
+
+		this.duration--;
+	}
+}
+
+let rotateStrength = .4;
+
+// rotateDir is either 1 or -1 / rotateStrength ranges from 0 to 1 / form is 0 for rectangle, 1 for circle
+function setFluidflowfieldSwirl(pos, cellCount, rotateDir, crossRotate, form, duration) {
+	rotateDir = rotateDir > 0 ? 1 : -1;
+
+	for (let i = -cellCount/2; i < cellCount/2; i++) {
+		for (let j = -cellCount/2; j < cellCount/2; j++) {
+			let cellPos = [pos[0] + i * flowCellSize + flowCellSize/2, pos[1] + j * flowCellSize + flowCellSize/2];
+
+			if ((form == 0) || (form == 1 && geometric.dist(cellPos, pos) <= cellCount/2 * flowCellSize)) {
+				let dir = [pos[0] - cellPos[0], pos[1] - cellPos[1]];
+
+                let distToCenter = geometric.dist(pos, cellPos);
+                let dirStrength = flowfieldStrength/(distToCenter/2);
+
+				dir = geometric.setMag(dir, dirStrength);
+				dir = geometric.rotate(dir, (Math.PI/4) * rotateDir * rotateStrength);
+
+				if (crossRotate == 0) {
+					if ((i < 0 && j < 0) || (i >= 0 && j >= 0)) {
+						dir = geometric.rotate(dir, Math.PI);
+					}
+				} else if (crossRotate == 1) {
+					if ((i < 0 && j >= 0) || (i >= 0 && j < 0)) {
+						dir = geometric.rotate(dir, Math.PI);
+					}
+                }
+                
+                flowCells.push(new flowCell(cellPos, flowCellSize, duration, dir));
+			}
+		}
+	}
+    exports.flowCells = flowCells;
+}
+
+exports.setFluidflowfieldSwirl = setFluidflowfieldSwirl;
+
+// rotate is either 0, 1, 2 or 3 whoch represents the direction of the hourglass / form is 0 for rectangle, 1 for circle
+function setFluidflowfieldHourglass(pos, cellCount, rotate, form, duration) {
+    rotate = Math.max(Math.min(rotate, 3), 0);
+    
+	for (let i = -cellCount/2; i < cellCount/2; i++) {
+		for (let j = -cellCount/2; j < cellCount/2; j++) {
+            let cellPos = [pos[0] + i * flowCellSize + flowCellSize/2, pos[1] + j * flowCellSize + flowCellSize/2];
+
+            if ((form == 0) || (form == 1 && geometric.dist(cellPos, pos) <= cellCount/2 * flowCellSize)) {
+                let dir = [pos[0] - cellPos[0], pos[1] - cellPos[1]];
+
+                let distToCenter = geometric.dist(pos, cellPos);
+                let dirStrength = flowfieldStrength/(distToCenter);
+
+                dir = geometric.setMag(dir, dirStrength);
+
+                if (rotate == 0 && i < 0) {
+                      dir = geometric.rotate(dir, Math.PI);
+                } else if (rotate == 1 && i >= 0) {
+                    dir = geometric.rotate(dir, Math.PI);
+                } else if (rotate == 2 && j < 0) {
+                    dir = geometric.rotate(dir, Math.PI);
+                } else if (rotate == 3 && j >= 0) {
+                    dir = geometric.rotate(dir, Math.PI);
+                }
+
+                flowCells.push(new flowCell(cellPos, flowCellSize, duration, dir));
+            }
+        }
+    }
+    exports.flowCells = flowCells;
+}
+
+exports.setFluidflowfieldHourglass = setFluidflowfieldHourglass;

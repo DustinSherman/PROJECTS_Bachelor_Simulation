@@ -22,37 +22,36 @@ function explosionSetup() {
 }
 
 class explosion {
-	constructor(_Pos, _MaxSize, _Force, wFluidParticles) {
+	// particleType determines which kind of particles are affected (0 = normal particles, 1 = fluid particles)
+	constructor(_Pos, _MaxSize, _Force, particleType) {
 		this.pos = [_Pos[0], _Pos[1]];
 		this.maxSize = Math.round(geometric.constrain(_MaxSize, explosionMinSize, explosionMaxSize));
 		this.force = geometric.constrain(_Force, explosionMinForce, explosionMaxForce);
-
-		this.wFluidParticles = wFluidParticles;
-
+		this.particleType = particleType;
 		this.tmpSize = 1;
 		this.index = 0;
 		this.kill = false;
 	}
 
 	draw() {
-		let tmpParticles = [];
-
-		tmpParticles = tmpParticles.concat(simulation.tree.contentParticles(this.pos, this.tmpSize));
-
 		let self = this;
 
-		tmpParticles.forEach(function(tmpParticle) {
-			if (geometric.dist(tmpParticle.pos, self.pos) < self.tmpSize) {
-				let tmpForceVelocity = [tmpParticle.pos[0] - self.pos[0], tmpParticle.pos[1] - self.pos[1]];
-				tmpForceVelocity = geometric.setMag(tmpForceVelocity, self.force/geometric.dist(self.pos, tmpParticle.pos));
+		if (this.particleType == 0) {
+			let tmpParticles = [];
 
-				tmpParticle.addAcceleration(tmpForceVelocity);
-			}
-		});
-
-		if (this.wFluidParticles) {
+			tmpParticles = tmpParticles.concat(simulation.tree.contentParticles(this.pos, this.tmpSize, 0));
+	
+			tmpParticles.forEach(function(tmpParticle) {
+				if (geometric.dist(tmpParticle.pos, self.pos) < self.tmpSize) {
+					let tmpForceVelocity = [tmpParticle.pos[0] - self.pos[0], tmpParticle.pos[1] - self.pos[1]];
+					tmpForceVelocity = geometric.setMag(tmpForceVelocity, self.force/geometric.dist(self.pos, tmpParticle.pos));
+	
+					tmpParticle.addAcceleration(tmpForceVelocity);
+				}
+			});
+		} else if (this.particleType == 1) {
 			let tmpFluidParticles = [];
-			tmpFluidParticles = tmpFluidParticles.concat(simulation.fluidTree.contentParticles(this.pos, this.tmpSize));
+			tmpFluidParticles = tmpFluidParticles.concat(simulation.fluidTree.contentParticles(this.pos, this.tmpSize, 0));
 	
 			tmpFluidParticles.forEach(function(tmpFluidParticle) {
 				if (geometric.dist(tmpFluidParticle.pos, self.pos) < self.tmpSize) {
@@ -76,7 +75,7 @@ class explosion {
 
 function setTrails(pos, size, trailLength, duration) {
 	let trailParticles = [];
-	trailParticles = trailParticles.concat(simulation.tree.contentParticles(pos, size));
+	trailParticles = trailParticles.concat(simulation.tree.contentParticles(pos, size, 0));
 
 	trailParticles.forEach(function(particle) {
 		if (!particle.merged) {
@@ -92,7 +91,7 @@ function setTrails(pos, size, trailLength, duration) {
 }
 
 function setShockwave(pos, strength) {
-
+	simulation.shockwaveData.push([pos[0], pos[1], strength]);
 }
 
 var effects = module.exports = {

@@ -15,23 +15,28 @@ exports.record = record;
 
 let caCount = 0;
 let caAnimateCount = 0;
-let caRuleCount = 0;
-let caNeighbourhoodCount = 0;
-let caRulesArray = [];
-let caNeighbourhoodArray = [];
+let caNeighbourhoodRulesCount = 0;
 let caAnimateArray = [];
-let caHappenings = [0, 0, 0];
 
 let trailCount = 0;
+
+let fluidMoveCount = 0;
+let fluidExplosionCount = 0;
+let fluidFlowfieldCount = 0;
+
+let shockWaveCount = 0;
 
 let fluidParticleAverage = 0;
 let fluidParticleCount = 0;
 
 exports.caCount = caCount;
 exports.caAnimateCount = caAnimateCount;
-exports.caRuleCount = caRuleCount;
-exports.caNeighbourhoodCount = caNeighbourhoodCount;
+exports.caNeighbourhoodRulesCount = caNeighbourhoodRulesCount;
+exports.fluidMoveCount = fluidMoveCount;
+exports.fluidExplosionCount = fluidExplosionCount;
+exports.fluidFlowfieldCount = fluidFlowfieldCount;
 exports.trailCount = trailCount;
+exports.shockWaveCount = shockWaveCount;
 
 function logBaseSettings() {
     let settingsString = "";
@@ -91,7 +96,7 @@ function logBaseSettings() {
     settingsString += "\r\n" + "Fluid Cells Data";
     settingsString += "\r\n" + "  " + "Resolution " + simulation.fluidCellResolution;
     settingsString += "\r\n" + "  " + "Radius " + simulation.fluidCellRadius;
-    let baseFluidParticles = simulation.fluidTree.contentParticles([simulation.fluidCellResolution/2, simulation.fluidCellResolution/2], simulation.fluidCellRadius).length;
+    let baseFluidParticles = simulation.fluidTree.contentParticles([simulation.fluidCellResolution/2, simulation.fluidCellResolution/2], simulation.fluidCellRadius, 0).length;
     settingsString += "\r\n" + "  " + "BaseFluidParticles (Radius " + simulation.fluidCellRadius + ") " + baseFluidParticles;
     settingsString += "\r\n";
 
@@ -240,14 +245,21 @@ function saveParticles(_Freq) {
         // UNCOMMENT to log Cellular Automata Happenings
         // string += "\r\n        CA LiveDeath-Rule: " + caHappenings[0] + " Neighbourhood: " + caHappenings[1] + " CellsAlive: " + caHappenings[2];
 
-        // UNCOMMENT to log general new Cellular Automatas
-        string += "\r\n        CA Count: " + caCount;
-        string += "\r\n        CA Animate Count: " + caAnimateCount;
-        string += "\r\n        CA Rule Count: " + caRuleCount;
-        string += "\r\n        CA Neighbourhood Count: " + caNeighbourhoodCount;
-
         // UNCOMMENT to log particle Trails
         string += "\r\n        Particle Trail Count: " + trailCount;
+
+        // UNCOMMENT to log Cellular Automatas Stuff
+        string += "\r\n        CA Count: " + caCount;
+        string += "\r\n        CA Animate Count: " + caAnimateCount;
+        string += "\r\n        CA Neighbourhood / Rule Count: " + caNeighbourhoodRulesCount;
+
+        // UNCOMMENT to log Fluid Stiff
+        string += "\r\n        FluidMove Count: " + fluidMoveCount;
+        string += "\r\n        FluidExplosion Count: " + fluidExplosionCount;
+        string += "\r\n        FluidFlowfield Count: " + fluidFlowfieldCount;
+
+
+        string += "\r\n        Shockwave Count: " + shockWaveCount;
 
         record.push(string);
         exports.record = record;
@@ -273,7 +285,7 @@ function logFPS() {
     let elapsedTime = Math.floor((Date.now() - simulation.realtimeStart)/1000);
     let fps = simulation.timePassed/elapsedTime;
 
-    let string = "\r\n" + "      " + "  FPS: " + fps;
+    let string = "\r\n" + "      " + "  FPS: " + fps.toFixed(4) + " (" + simulation.getCurrentFPS()[0].toFixed(4) + ")";
 
     record.push(string);
     exports.record = record;
@@ -283,24 +295,28 @@ function logFPS() {
 
 exports.logFPS = logFPS;
 
-function logPolarity(particle) {
-    let string = "";
+function logNewPhase(phase) {
+    let phaseNames = ["Expand Phase", "Shrink Phase"];
 
-    let binaryString = "";
-    let polarityString = "";
-    for (let i = 0; i < particle.tmpCalcParticles.length; i++) {
-        polarityString += particle.tmpCalcParticles[i].polarity;
-        binaryString += particle.tmpCalcParticles[i].polarity > 0 ? 1 : 0;
-    }
+    let string = "\r\n" + pad(simulation.timePassed, 6) + "  New Phase " + phaseNames[phase - 1];
 
-    string += "\r\n" + pad(simulation.timePassed, 6) + "  Reaction PolarityResult Binary" + binaryString + " (" + polarityString + ") Decimal " + parseInt(binaryString, 2);
+    record.push(string);
+    exports.record = record;
+
+    saveFile();
+}
+
+exports.logNewPhase = logNewPhase;
+
+function logBinary(binaryResult) {
+    let string = " BinaryResult " + binaryResult;
 
     record.push(string);
 
     saveFile();
 }
 
-exports.logPolarity = logPolarity;
+exports.logBinary = logBinary;
 
 function logReaction(particle, center) {
     let self = particle;
@@ -343,32 +359,55 @@ function logReactionResult(particle) {
     // record.push(string);
 
     saveFile();
-
-    // UNCOMMENT to log the lowest akin of a reaction
-    // logReactionLowestAkin(particle);
 }
 
 exports.logReactionResult = logReactionResult;
 
-function logReactionLowestAkin(particle) {
-    let string = " (LowestAkin ";
-
-    let lowestAkin = simulation.stateMax;
-
-    for (let i = 0; i < particle.tmpCalcParticles.length; i++) {
-        if (particle.tmpCalcParticles[i].akin < lowestAkin) {
-            lowestAkin = particle.tmpCalcParticles[i].akin;
-        }
-    }
-
-    string += lowestAkin + ")";
+function logReactionLowestAkin(lowestAkin) {
+    let string = " (LowestAkin " + lowestAkin + ")";
 
     record.push(string);
 
     saveFile();
 }
 
-function logCellularAutomata(center, size, rule, neighbourhood, form) {
+exports.logReactionLowestAkin = logReactionLowestAkin;
+
+function logExplosion(size, force, count, threshold) {
+    let string = "\r\n" + "        " + "Fluid Explosion " + "Size " + size + " Force " + force;
+
+    if (count > threshold) {
+        string += " " + count + "/" + threshold + " near Particles";
+    }
+
+    record.push(string);
+
+    saveFile();
+}
+
+exports.logExplosion = logExplosion;
+
+function logMerge(particle) {
+    let self = particle;
+
+    let string = "\r\n" + pad(simulation.timePassed, 6) + "  Merge [" + self.pos[0].toFixed(2) + ", " + self.pos[1].toFixed(2) + "] ";
+
+    string+= " " + self.state + "#" + self.id + " |";
+
+    self.tmpCalcParticles.forEach(function (logParticle) {
+        if (logParticle != self) {
+            string += " " + logParticle.state + "#" + logParticle.id;
+        }
+    });
+
+    record.push(string);
+
+    saveFile();
+}
+
+exports.logMerge = logMerge;
+
+function logCA(center, size, rule, neighbourhood, form) {
     let string =  "\r\n" + "        " + "Cellular Automata pos " + center + " size " + size + " Rule " + rule + " Neighbourhood " + neighbourhood;
 
     if (form == 0) {
@@ -384,36 +423,9 @@ function logCellularAutomata(center, size, rule, neighbourhood, form) {
     saveFile();
 }
 
-exports.logCellularAutomata = logCellularAutomata;
+exports.logCA = logCA;
 
-function logCellularAutomataRule(center, size, ruleIndex, form) {
-    let string = "\r\n" + "        " + "caRule Pos " + center + " size " + size + " Index" + ruleIndex + "/" + (caRules.rules.length - 1) + " Rule " + caRules.rules[ruleIndex];
-
-    if (form == 0) {
-        string += " Rect";
-    } else if (form == 1) {
-        string += " Circle";
-    }
-
-    if (caRulesArray[ruleIndex] == undefined) {
-        caRulesArray[ruleIndex] = 1;
-    } else {
-        caRulesArray[ruleIndex]++;
-    }
-
-    fluidParticleAverage += (ruleIndex + 1);
-    fluidParticleCount++;
-
-    caRuleCount++;
-
-    record.push(string);
-
-    saveFile();
-}
-
-exports.logCellularAutomataRule = logCellularAutomataRule;
-
-function logCellularAutomataNeighbourhood(center, size, index, form) {
+function logCANeighbourhoodRule(center, size, neighbourIndex, ruleIndex, form) {
     let string = "";
 
     if (form == 0) {
@@ -422,23 +434,17 @@ function logCellularAutomataNeighbourhood(center, size, index, form) {
         string += " Circle";
     }
 
-    string += "\r\n" + "      " + "  " + "caNeighbourhood ";
-    string += "Pos " + center + " size " + size + " Index " + index + " Neighbours " + caRules.neighbours[index];
+    string += "\r\n" + "      " + "  " + "caNeighbourhood / Rule ";
+    string += "Pos " + center + " size " + size + " Neighbours " + caRules.neighbours[neighbourIndex] + " Rule " + caRules.rules[ruleIndex];
 
-    if (caNeighbourhoodArray[index] == undefined) {
-        caNeighbourhoodArray[index] = 1;
-    } else {
-        caNeighbourhoodArray[index]++;
-    }
-
-    caNeighbourhoodCount++;
+    caNeighbourhoodRulesCount++;
 
     record.push(string);
 
     saveFile();
 }
 
-exports.logCellularAutomataNeighbourhood = logCellularAutomataNeighbourhood;
+exports.logCANeighbourhoodRule = logCANeighbourhoodRule;
 
 function logCellularAutomataAnimate(center, size, form) {
     let string = "";
@@ -483,11 +489,11 @@ function logCellularAutomataAnimate(center, size, form) {
 exports.logCellularAutomataAnimate = logCellularAutomataAnimate;
 
 function logTrails(pos) {
-    // let string = "";
+    let string = "";
 
-    // string += "\r\n" + "      " + "  " + "Trails pos " + pos;
+    string += "\r\n" + "      " + "  " + "Trails pos " + pos;
 
-    // record.push(string);
+    record.push(string);
 
     trailCount++;
 
@@ -496,28 +502,10 @@ function logTrails(pos) {
 
 exports.logTrails = logTrails;
 
-function logMerge(particle) {
-    let self = particle;
+function logFluidVelocity(size, force, dirCount) {
+    let string = "\r\n" + "        " + "FluidVeloity Size " + size + " Force " + force + " DirectionCount " + dirCount;
 
-    let string = "\r\n" + pad(simulation.timePassed, 6) + "  Merge [" + self.pos[0].toFixed(2) + ", " + self.pos[1].toFixed(2) + "] ";
-
-    string+= " " + self.state + "#" + self.id + " |";
-
-    self.tmpCalcParticles.forEach(function (logParticle) {
-        if (logParticle != self) {
-            string += " " + logParticle.state + "#" + logParticle.id;
-        }
-    });
-
-    record.push(string);
-
-    saveFile();
-}
-
-exports.logMerge = logMerge;
-
-function logFluidVelocity(pos, size, force) {
-    let string = "\r\n" + "        " + "FluidVeloity [" + pos[0] + ", " + pos[1] + "] Size " + size.toFixed(2) + " Force " + force;
+    fluidMoveCount++;
 
     record.push(string);
 
@@ -526,19 +514,40 @@ function logFluidVelocity(pos, size, force) {
 
 exports.logFluidVelocity = logFluidVelocity;
 
-function logExplosion(size, force, count, threshold) {
-    let string = "\r\n" + "        " + "Explosion " + "Size " + size + " Force " + force;
+function logFluidExplosion(size, force) {
+    let string = "\r\n" + "        " + "FluidExplosion Size " + size + " Force " + force;
 
-    if (count > threshold) {
-        string += " " + count + "/" + threshold + " near Particles";
-    }
+    fluidExplosionCount++;
 
     record.push(string);
 
     saveFile();
 }
 
-exports.logExplosion = logExplosion;
+exports.logFluidExplosion = logFluidExplosion;
+
+function logFluidFlowfield(size, duration, form) {
+    let type;
+    let shape;
+
+    if (form >= 8) {
+        type = "Hourglass";
+        shape = Math.round((form - 8)/8.0) == 0 ? "Square" : "Cirlce";
+    } else {
+        type = "Swirl";
+        shape = Math.round(form/8.0) == 0 ? "Square" : "Cirlce";
+    }
+
+    let string = "\r\n" + "        " + "FluidFlowfield " + type + " " + shape + " Size " + size + " Duration " + duration;
+
+    fluidFlowfieldCount++;
+
+    record.push(string);
+
+    saveFile();
+}
+
+exports.logFluidFlowfield = logFluidFlowfield;
 
 // Add leading zeros
 function pad(num, size) {

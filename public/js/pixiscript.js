@@ -28,6 +28,11 @@ let fpsInterval, timeStart, timeNow, timeThen, timeElapsed;
 
 let scale = .25;
 
+// Particles
+let colorsPos = [0xFFFFFF, 0xFDF9F6, 0xFBF3ED, 0xFAECE3, 0xF8E6DA, 0xF6E0D1, 0xF4DAC8, 0xF2D3BE, 0xF0CDB5, 0xEFC7AC, 0xEDC1A3, 0xEBBA99];
+let colorsNeg = [0xFFFFFF, 0xF6FBFD, 0xEDF7FB, 0xE3F3FA, 0xDAEFF8, 0xD1EBF6, 0xC8E7F4, 0xBEE2F2, 0xB5DEF0, 0xACDAEF, 0xA3D6ED, 0x99D2EB];
+let radiVals = [1.0, 1.414, 1.732, 2.0, 2.236, 2.449, 2.646, 2.828, 3.0, 3.162, 3.317, 3.464, 3.606, 3.742, 3.873, 4.0, 4.123, 4.243, 4.359, 4.472, 4.583, 4.69, 4.796, 4.899, 5.0, 5.099, 5.196, 5.292, 5.385, 5.477, 5.568, 5.657];
+
 // Fluid
 let tmpFluidData;
 let resolution;
@@ -46,6 +51,13 @@ const fluidCellContainer = new PIXI.Container();
 let currentParticleTrails = [];
 let particleTrailLines = [];
 let trailStroke = .6;
+
+// shockwaves
+let shockwaveFilters = [];
+let shockwaveAmplitudeBase = 16;
+let shockwaveWavelengthBase = 32;
+let shockwaveRadiusBase = 8;
+let shockwaveTimingBase = .01;
 
 // INIT
 let app = new Application({
@@ -104,11 +116,12 @@ function animate() {
 }
 
 function draw() {
-    // drawFluidCells();
+    drawFluidCells();
     drawParticles();
-    // drawParticleTrails();
-    // drawFluid();
-    // drawCellularAutomata();
+    drawParticleTrails();
+    drawFluid();
+    drawCellularAutomata();
+    drawShockwaves();
 
     if (play) {
         timePassed++;
@@ -129,23 +142,40 @@ function draw() {
 function drawParticles() {
     // Add new Particles
     for (let i = particleSprites.length; i < particles[timePassed].length; i++) {
-        particleSprites[i] = new Sprite(
-            resources['../assets/particle_0.png'].texture
-        );
-
-        app.stage.addChild(particleSprites[i]);
-        particleSprites[i].scale.set(scale, scale);
+        // Check for no merged Particles
+        if (particles[timePassed][i][2] != undefined) {
+            particleSprites[i] = new Sprite(
+                resources['../assets/particle_0.png'].texture
+            );
+    
+            app.stage.addChild(particleSprites[i]);
+            particleSprites[i].scale.set(scale, scale);
+        }
     }
 
     // Delete merged particles
     for (let i = particleSprites.length - 1; i >= 0; i--) {
-        if (particles[timePassed][i] == undefined) {
+        if (particles[timePassed][i][2] == undefined) {
             particleSprites[i].splice(i, 1);
         }
     }
 
     for (let i = 0; i < particles[timePassed].length; i++) {
-        particleSprites[i].position.set(particles[timePassed][i][1], particles[timePassed][i][2]);
+        particleSprites[i].position.set(particles[timePassed][i][0], particles[timePassed][i][1]);
+
+        if (timePassed > 0) {
+            // Set Color of particles
+            if (particles[timePassed][i][2] != particles[timePassed - 1][i][2]) {
+                let colorIndex = Math.abs(particles[timePassed][i][2]);
+                particleSprites[i].tint = particles[timePassed][i][2] > 0 ? colorsPos[colorIndex] : colorsNeg[colorIndex];
+            }
+
+            // Set size of particles
+            if (particles[timePassed][i][3] != particles[timePassed - 1][i][3]) {
+                let scale = radiVals[particles[timePassed][i][3]];
+                particleSprites[i].scale.set(scale, scale);
+            }
+        }
     }
 }
 
@@ -305,22 +335,25 @@ function drawCellularAutomata() {
 
         caCells[index] = !caCells[index];
 
-        if (caCells[index] && caAliveCount[index] < caAliveCountMax) {
-            caAliveCount[index]++;
-        } else if (!caCells[index]) {
-            caAliveCount[index] = 0;
-        }
-
         caSprites[index].visible = caCells[index];
+    }
 
-        if (caCells[index]) {
-            if (caAliveCount[index] == 1) {
-                caSprites[index].alpha = 1;
-            } else if (caAliveCount[index] < caAliveCountMax) {
-                caSprites[index].alpha = caAliveCount[index]/caAliveCountMax;
-            } else {
-                caSprites[index].alpha = 1;
+    // Set Alpha for CA Cells
+    for (let i = 0; i < caCells.length; i++) {
+        if (caCells[i]) {
+            if (caAliveCount[i] < caAliveCountMax) {
+                caAliveCount[i]++;
             }
+
+            if (caAliveCount[i] == 1) {
+                caSprites[i].alpha = 1;
+            } else if (caAliveCount[i] < caAliveCountMax) {
+                caSprites[i].alpha = caAliveCount[i]/caAliveCountMax;
+            } else {
+                caSprites[i].alpha = 1;
+            }
+        } else {
+            caAliveCount[i] = 0;
         }
     }
 }
@@ -412,6 +445,45 @@ function drawParticleTrails() {
             if (currentParticleTrails[i][3] > 0) {
                 currentParticleTrails[i][3]--;
             }
+        }
+    }
+}
+
+// ////////////////////////////// SHOCKWAVES //////////////////////////////
+
+function drawShockwaves() {
+    // Add new Shockwave Filters
+    let newShockwave = false;
+    for (let i = 0; i < shockwaves[timePassed].length; i++) {
+        shockwaveFilters.push(new PIXI.filters.ShockwaveFilter());
+
+        // Set shockwaveFilter
+        shockwaveFilters[i].center.x = shockwaves[timePassed][i][0];
+        shockwaveFilters[i].center.y = shockwaves[timePassed][i][1];
+        shockwaveFilters[i].amplitude = shockwaveAmplitudeBase;
+        shockwaveFilters[i].wavelength = shockwaveWavelengthBase;
+        shockwaveFilters[i].radius = shockwaveRadiusBase * shockwaves[timePassed][i][2];
+
+        newShockwave = true;
+    }
+
+    // Actualize filters if a new filter is added
+    if (newShockwave) {
+        app.filters = [shockwaveFilters];
+    }
+
+    // Increase Timer for shockwaves
+    for (let i = 0; i < shockwaveFilters.length; i++) {
+        shockwaveFilters[i].time += shockwaveTimingBase;
+
+        let multi = 1 - shockwaveFilters[i].time;
+        shockwaveFilters[i].amplitude = shockwaveAmplitudeBase * multi;
+    }
+
+    // Delete passed shockwaves
+    for (let i = shockwaveFilters.length - 1; i >= 0; i--) {
+        if (shockwaveFilters[i].time > 1) {
+            shockwaveFilters.splice(i, 1);
         }
     }
 }

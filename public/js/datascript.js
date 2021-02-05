@@ -4,13 +4,15 @@ let fluid = [];
 let fluidCells = [];
 let cellularAutomataData = [];
 let particleTrails = [];
+let shockwaves = [];
 
 let dataObjects = [
     particles,
     fluid,
     fluidCells,
     cellularAutomataData,
-    particleTrails
+    particleTrails,
+    shockwaves
 ]
 
 let dataNames = [
@@ -18,7 +20,8 @@ let dataNames = [
     'fluid',
     'fluidCells',
     'cellularAutomata',
-    'trails'
+    'trails',
+    'shockwaves'
 ]
 
 let fluidParticleCount;
@@ -29,7 +32,7 @@ let cellularAutomataResolution;
 let fieldWidth, timeEnd, saveFreq;
 let loadProgress = 0;
 
-let tmpPath = '2yjo2y';
+let tmpPath = 'undefined';
 
 let startIDHex = '';
 let startDate;

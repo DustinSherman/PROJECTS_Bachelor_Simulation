@@ -54,23 +54,23 @@ class Quadtree {
 			pos[1] < rectPos[1] + rectSize/2.0);
 	}
 
-	circleIntersects(cPos, cRadius) {
-		let tmpX = cPos[0];
-		let tmpY = cPos[1];
+	circleIntersects(pos, cRadius) {
+		let tmpX = pos[0];
+		let tmpY = pos[1];
 
-		if (cPos[0] < this.pos[0] - this.size/2) {
+		if (pos[0] < this.pos[0] - this.size/2) {
 			tmpX = this.pos[0] - this.size/2;
-		} else if (cPos[0] > this.pos[0] + this.size/2) {
+		} else if (pos[0] > this.pos[0] + this.size/2) {
 			tmpX = this.pos[0] + this.size/2;
 		}
-		if (cPos[1] < this.pos[1] - this.size/2) {
+		if (pos[1] < this.pos[1] - this.size/2) {
 			tmpY = this.pos[1] - this.size/2;
-		} else if (cPos[1] > this.pos[1] + this.size/2) {
+		} else if (pos[1] > this.pos[1] + this.size/2) {
 			tmpY = this.pos[1] + this.size/2;
 		}
 
-		let distX = cPos[0] - tmpX;
-		let distY = cPos[1] - tmpY;
+		let distX = pos[0] - tmpX;
+		let distY = pos[1] - tmpY;
 		let distance = math.sqrt((distX * distX) + (distY * distY));
 
 		if (distance <= cRadius) {
@@ -80,31 +80,72 @@ class Quadtree {
 		}
 	}
 
-	returnParticles(pos, radius) {
+	squareIntersects(pos, size) {
+		let intersects = false;
+		let dirs = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
+
+		for (let i = 0; i < 4; i++) {
+			let rectPos = [pos[0] + dirs[i][0] * size/2, pos[1] + dirs[i][1] * size/2];
+
+			if (rectPos[0] > this.pos[0] - this.size/2
+				&& rectPos[0] < this.pos[0] + this.size/2
+				&& rectPos[1] > this.pos[1] - this.size/2
+				&& rectPos[1] < this.pos[1] + this.size/2) {
+					intersects = true;
+
+					break;
+				}
+		}
+
+		return intersects;
+	}
+
+	// form 0 = circle, 1 = square
+	returnParticles(pos, size, form) {
 		let returnParticles = [];
 
-		if (this.circleIntersects(pos, radius)) {
-			if (!this.divided) {
-				this.tmpParticles.forEach(function(tmpParticle) {
-					if (math.distance(tmpParticle.pos, pos) < radius) {
-						returnParticles.push(tmpParticle);
-					}
-				})
-			} else {
-				this.children.forEach(function(child) {
-					returnParticles = returnParticles.concat(child.returnParticles(pos, radius));
-				})
+		if (form == 0) {
+			if (this.circleIntersects(pos, size)) {
+				if (!this.divided) {
+					this.tmpParticles.forEach(function(tmpParticle) {
+						if (math.distance(tmpParticle.pos, pos) < size) {
+							returnParticles.push(tmpParticle);
+						}
+					})
+				} else {
+					this.children.forEach(function(child) {
+						returnParticles = returnParticles.concat(child.returnParticles(pos, size, form));
+					})
+				}
+			}
+		} else if (form == 1) {
+			if (this.squareIntersects(pos, size)) {
+				if (!this.divided) {
+					this.tmpParticles.forEach(function(tmpParticle) {
+						if (tmpParticle.pos[0] > pos[0] - size/2
+							&& tmpParticle.pos[0] < pos[0] + size/2
+							&& tmpParticle.pos[1] > pos[1] - size/2
+							&& tmpParticle.pos[1] < pos[1] + size/2) {
+							returnParticles.push(tmpParticle);
+						}
+					})
+				} else {
+					this.children.forEach(function(child) {
+						returnParticles = returnParticles.concat(child.returnParticles(pos, size, form));
+					})
+				}
 			}
 		}
+
 
 		return returnParticles;
 	}
 
-	contentParticles(pos, radius) {
+	// form 0 = circle, 1 = square
+	contentParticles(pos, radius, form) {
 		let contentParticles = [];
 
-		contentParticles = contentParticles.concat(this.returnParticles(pos, radius));
-
+		contentParticles = contentParticles.concat(this.returnParticles(pos, radius, form));
 
 		let torus = [0, 0];
 
@@ -121,14 +162,14 @@ class Quadtree {
 			if (torus[i] != 0) {
 				tmpPos[i] = tmpPos[i] + torus[i] * simulation.fieldWidth;
 				
-				contentParticles = contentParticles.concat(this.returnParticles(tmpPos, radius));
+				contentParticles = contentParticles.concat(this.returnParticles(tmpPos, radius, form));
 			}
 		}
 
 		if (torus[0] != 0 && torus[1] != 0) {
 			let tmpPos = [pos[0] + torus[0] * simulation.fieldWidth, pos[1] + torus[1] * simulation.fieldWidth];
 
-			contentParticles = contentParticles.concat(this.returnParticles(tmpPos, radius));
+			contentParticles = contentParticles.concat(this.returnParticles(tmpPos, radius, form));
 		}
 
 		return contentParticles;

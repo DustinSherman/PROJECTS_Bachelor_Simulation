@@ -6,6 +6,7 @@ const log = require("./log.js");
 
 let resolution;
 let cells = [];
+exports.cells = cells;
 
 function init() {
     resolution = simulation.caResolution;
@@ -26,7 +27,6 @@ exports.init = init;
 
 function update() {
     // For every Cell check if a neighbourhood is set and if a rule is set
-
     for (let col = 0; col < cells.length; col++) {
         for (let row = 0; row < cells[col].length; row++) {
             if (cells[col][row].neighbourhoodIndex !== -1 
@@ -44,6 +44,8 @@ function update() {
             }
         }
     }
+
+    exports.cells = cells;
 }
 
 exports.update = update;
@@ -168,14 +170,14 @@ exports.setRule = setRule;
 */
 
 // Form 0 = rectangle, 1 = circle
-function getCells(center, Size, form) {
+function getCells(center, size, form) {
     let tmpCellIndex = [];
 
     let row = Math.floor(center[0] / resolution);
     let col = Math.floor(center[1] / resolution);
 
     // The tmpSize always represents half the size of the rectangle
-    let tmpSize = Size / resolution;
+    let tmpSize = size / resolution;
 
     if (form == 1) {
         tmpSize = Math.round(tmpSize * 1.128);

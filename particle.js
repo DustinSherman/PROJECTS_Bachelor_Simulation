@@ -2,6 +2,7 @@
 var math = require("mathjs");
 const fs = require("fs");
 
+const rules = require("./particlerules.js");
 const geometric = require("./geometric.js");
 const simulation = require("./simulation.js");
 const effects = require("./effects.js");
@@ -141,8 +142,8 @@ class Particle {
 		}
 	}
 
-	addAcceleration(_Acceleration) {
-		this.acceleration = [this.acceleration[0] + _Acceleration[0], this.acceleration[1] + _Acceleration[1]];
+	addAcceleration(acceleration) {
+		this.acceleration = [this.acceleration[0] + acceleration[0], this.acceleration[1] + acceleration[1]];
 	}
 
 	// ////////////////////////////// CALC GRAVITATION //////////////////////////////
@@ -150,7 +151,7 @@ class Particle {
 	// Set Graviational Force
 	calcGrav() {
 		this.tmpParticles = [];
-		this.tmpParticles = this.tmpParticles.concat(simulation.tree.contentParticles(this.pos, this.gravRadius));
+		this.tmpParticles = this.tmpParticles.concat(simulation.tree.contentParticles(this.pos, this.gravRadius, 0));
 
 		let self = this;
 
@@ -183,7 +184,7 @@ class Particle {
 	// ////////////////////////////// CALC MERGE / REACTION //////////////////////////////
 
 	calc() {
-		this.tmpParticles = simulation.tree.contentParticles(this.pos, this.size * .55);
+		this.tmpParticles = simulation.tree.contentParticles(this.pos, this.size * .55, 0);
 		this.tmpCalcParticles = [];
 
 		let self = this;
@@ -254,12 +255,8 @@ class Particle {
 			}
 			center = [center[0]/this.tmpCalcParticles.length, center[1]/this.tmpCalcParticles.length];
 
+			// UNCOMMENT to log Reaction
 			if (simulation.logData) {
-				// UNCOMMENT to log polarity Result
-				if (Math.abs(this.state) != 1) {
-					log.logPolarity(this);
-				}
-
 				log.logReaction(this, center);
 			}
 
@@ -279,16 +276,15 @@ class Particle {
 
 			let nearParticleRadius = 32;
 			let nearParticleCountThreshold = 16;
-			let nearParticleCount = simulation.tree.contentParticles(center, nearParticleRadius).length;
+			let nearParticleCount = simulation.tree.contentParticles(center, nearParticleRadius, 0).length;
 
 			if (nearParticleCount > nearParticleCountThreshold) {
 				tmpExplosionForce *= (1 + (nearParticleCount - nearParticleCountThreshold)/4);
 				tmpExplosionSize *= (1 + (nearParticleCount - nearParticleCountThreshold)/4);
 			}
 
-			let wFluidParticles = Math.abs(this.state) > 1;
 
-			simulation.explosions.push(new effects.explosion(center, tmpExplosionSize, tmpExplosionForce, wFluidParticles));
+			simulation.explosions.push(new effects.explosion(center, tmpExplosionSize, tmpExplosionForce, 0));
 
 			// UNCOMMENT to log the explosion Values
 			// log.logExplosion(tmpExplosionSize, tmpExplosionForce, nearParticleCount, nearParticleCountThreshold);
@@ -365,89 +361,230 @@ class Particle {
 			tmpVelocity = geometric.rotate(tmpVelocity, (math.pi * 2) / math.floor(this.tmpCalcParticles.length * 1.5));
 		}
 
-		// Reaction Results
-		/*
-			The difference between the lowest akin and the state determines if there's going to be a special happening like particle trails,
-			or a cellular Automata. The size increases the higher the state and the lower the lowestAkin. CA Animate Size is 1/8 of the original size.
-			Particle Trails Size is 2/3 of the original size.
+		simulation.updateQuadtree();
 
-			CA Complete (CAC)	CA Animate (CAA)	CA Neighbourhood (CAN)	CA Rule (CAR)	Trails (T)
-
-			# Normal Phase
-
-			Lowest Akin / State	| 1/-1	| 2/-2	| 3/-3	| 4/-4	| 5/-5	| 6/-6	| 7/-7	| 8/-8	| 9/-9	| 10/-10	| 11/-11	| 12/-12
-			0					|		|		|		| T		| CAC	| CAC	| CAC	| CAN	| CAA	| CAA		| CAA		|
-			1					| X		|		|		|		| T		| CAC	| CAC	| CAR	| CAR	| CAA		| CAA		|
-			2					| X 	| X		|		|		|		| T		| CAC	| T 	| CAN  	| CAN		| CAA		|	
-			3					| X		| X		| X		|		|		|		| T		|   	| T 	| CAR  		| CAR		|
-			4					| X		| X		| X		| X		|		|		|		| 		|   	| T  		| CAN  		|		
-			5					| X		| X		| X		| X		| X		|		|		|		| 		|   		| T  		|
-		*/
-
-		// First value is the absolute state and the second value is the lowestAkin
-		let trailConstelations = [
-			[4, 0], [5, 1], [6, 2], [7, 3], [8, 2], [9, 3], [10, 4], [10, 5]
-		];
-
-		let caCompleteConstelations = [
-			[5, 0], [6, 0], [6, 1], [7, 0], [7, 1], [7, 2]
-		];
-
-		let caNeighbourhoodConstelations = [
-			[8, 0], [9, 2], [10, 2], [11, 4]
-		];
-
-		let caRuleConstelations = [
-			[8, 1], [9, 1], [10, 3], [11, 3]
-		];
-
-		let caAnimateConstelations = [
-			[9, 0], [10, 0], [10, 1], [11, 0], [11, 1], [11, 2]
-		];
-
-		let constelations = [trailConstelations, caCompleteConstelations, caNeighbourhoodConstelations, caRuleConstelations, caAnimateConstelations];
-		let reactionResult = undefined;
-
-		for (let i = 0; i < constelations.length; i++) {
-			for (let j = 0; j < constelations[i].length; j++) {
-				if (Math.abs(this.state) == constelations[i][j][0] && lowestAkin == constelations[i][j][1]) {
-					reactionResult = i;
-				}
-			}
+		// UNCOMMENT to log binaryResult and lowestAkin
+		if (simulation.logData) {
+			log.logBinary(binaryResult);
+			log.logReactionLowestAkin(lowestAkin);
 		}
 
+		// Reaction Results
+		let reactionResult = undefined;
+
+		reactionResult = rules.getParticleReactionResult(this.state, lowestAkin, simulation.phase);
+
+		// Result
+		// 0 = trail, 1 = CA Complete, 2 = CA Neighbourhood/Rule, 3 = CA Animate, 4 = FluidMovement, 5 = FluidExplosion, 6 = Fluidflowfield
 		if (reactionResult != undefined) {
-			let size = Math.floor((Math.abs(this.state)/4 + 1) * ((simulation.stateMax - lowestAkin)/4 + 1) * 4);
-			// Form 0 = rectangle, 1 = circle
-			let form = this.state > 0 ? this.state % 2 : this.state - 1 % 2;
+			let multi = Math.max(Math.floor(((simulation.stateMax/3 * 2 - Math.abs(simulation.stateMax/3 * 2 - Math.abs(this.state))) * 2 - lowestAkin)/2), 1);
 
 			if (reactionResult == 0) {
-				size = Math.floor(size * 2/3);
-				let trailLength = Math.floor(1 + Math.abs(this.state)/4 + (simulation.stateMax - lowestAkin)/4) * 24;
+				let size = Math.floor(multi * 2/3);
+				let trailLength = multi * 24;
 
 				this.setTrails(center, size, trailLength, binaryResult);
 			} else if (reactionResult == 1) {
+				// Form 0 = rectangle, 1 = circle
+				let form = Math.abs(this.state) % 2;
+				let size = multi * 4;
+
 				this.setCellularAutomata(center, size, form, binaryResult);
 			} else if (reactionResult == 2) {
-				this.setCANeighbourhood(center, size, form, binaryResult);
+				// Form 0 = rectangle, 1 = circle
+				let form = Math.abs(this.state) % 2;
+				let size = multi * 4;
+
+				this.setCANeighbourhoodRule(center, size, form, binaryResult);
 			} else if (reactionResult == 3) {
-				this.setCARule(center, size, form);
-			} else if (reactionResult == 4) {
-				size = Math.floor(size/8);
+				// Form 0 = rectangle, 1 = circle
+				let form = Math.abs(this.state) % 2;
+				let size = Math.floor(multi/4);
 
 				this.setCAAnimate(center, size, form);
+			} else if (reactionResult == 4) {
+				let strength = multi/24 + 1;
+
+				this.setFluidMovement(center, tmpVelocity, strength, Math.ceil((binaryResult + 1)/4));
+			} else if (reactionResult == 5) {
+				let size = multi * 6;
+				let strength = multi * 4;
+
+				this.setFluidExplosion(center, size, strength);
+			} else if (reactionResult == 6) {
+				let size = multi * 8;
+				let duration = multi * 48;
+
+				this.setFluidflowfield(center, size, duration, binaryResult);
 			}
 		}
 
-		// Fluid Stuff
+		// Shockwave
 		/*
-			A reaction triggers fluidVelocity and also sets fluidCells in a radius around the reaction to different state. Positiv reactions increases the fluidCellPolarity,
-			negative reactions decrease the fluidCellPolarity. The distance to the reactionCenter determines how much the values is in- or decreased.
+			If the real reactionCount is higher than the reactionCount a shockwave is triggered which is only a visual effect in the frontend. The strength is determined
+			by the state.
+
+			| State | 1  | 2  | 3  | 4  | 5 | 6  | 7 | 8  | 9 | 10 | 11 | 12 |
+			| Multi | 16 | 14 | 12 | 10 | 8 | 7.5| 7 | 6.5| 6 | 5.5| 5  | X  |
 		*/
-		if (Math.abs(this.state) > 1) {
-			this.setFluidVelocity(center, tmpVelocity);
+
+		if (this.tmpCalcParticles.length > this.reactionCount) {
+			let shockwaveMulti = [32, 28, 24, 20, 16, 15, 14, 13, 12, 11, 10, 0];
+
+			effects.setShockwave(this.pos, shockwaveMulti[Math.abs(this.state)]);
+
+			log.shockWaveCount++;
+		}
+	}
+	
+	mergeFunc() {
+		let self = this;
+
+		this.tmpCalcParticles.forEach(function (mergeParticle) {
+			if (!self.mergedParticles.includes(mergeParticle) && mergeParticle != self) {
+				self.mergedParticles.push(mergeParticle);
+				mergeParticle.merged = true;
+			}
+		});
+
+		this.updateVals();
+	}
+
+	// ////////////////////////////// RESULTS //////////////////////////////
+
+	setCellularAutomata(center, size, form, neighbourhood) {
+		// Rule
+		let ruleIndex = simulation.tree.contentParticles(center, fluidParticleRadius, 0).length;
+		ruleIndex = Math.min(ruleIndex, (caRules.rules.length - 1));
+
+		// UNCOMMENT to log new cellular Automata
+		if (simulation.logData) {
+			log.logCA(center, size, ruleIndex, neighbourhood, form);
 		}
 
+		// Set Rule
+		cellularAutomata.setRule(center, size, form, ruleIndex);
+		// Neighbourhood
+		cellularAutomata.setNeighbourhood(center, size, form, neighbourhood);
+
+		// Animate
+		size = Math.floor(size/8);
+		cellularAutomata.animate(center, size, form);
+	}
+
+	setCANeighbourhoodRule(center, size, form, neighbourhood) {
+		// Rule
+		let ruleIndex = simulation.tree.contentParticles(center, fluidParticleRadius, 0).length;
+		ruleIndex = Math.min(ruleIndex, (caRules.rules.length - 1));
+
+		// UNCOMMENT to log Cellular Automata Neighbourhood and Cellular Automata Rules
+		if (simulation.logData) {
+			log.logCANeighbourhoodRule(center, size, neighbourhood, ruleIndex, form);
+		}
+
+		cellularAutomata.setRule(center, size, form, ruleIndex);
+		cellularAutomata.setNeighbourhood(center, size, form, neighbourhood);
+	}
+
+	setCAAnimate(center, size, form) {
+		// UNCOMMENT to count Cellular Automata Animates
+		if (simulation.logData) {
+			log.logCellularAutomataAnimate(center, size, form);
+		}
+
+		cellularAutomata.animate(center, size, form);
+	}
+
+	setTrails(center, size, trailLength, durationFactor) {
+		// Particle Trails
+		/*
+			If particle trails are created the important values are size, trailLength and duration.
+		*/
+
+		let duration = 24 + durationFactor * 8;
+
+		// UNCOMMENT to log new particle trails
+		if (simulation.logData) {
+			log.logTrails(center);
+		}
+
+		effects.setTrails(center, size, trailLength, duration);
+	}
+
+	setFluidMovement(center, tmpVelocity, multi, dirCount) {
+		// Calculate Force and velocity Magnitude for Fluid Velocity
+		
+		let fluidVelocityMag = simulation.fluidResolution/4;
+		let fluidSize = simulation.fluidResolution;
+
+		fluidVelocityMag *= multi;
+		fluidSize *= multi;
+
+		// If Rection Particle Count is higher then reactionCount
+		if (this.tmpCalcParticles.length > this.reactionCount) {
+			fluidVelocityMag *= (this.tmpCalcParticles.length - this.reactionCount)/2 + 1;
+			fluidSize *= ((this.tmpCalcParticles.length - this.reactionCount)/2 + 1);
+		}
+
+		fluidVelocityMag = fluidVelocityMag.toFixed(2);
+		fluidSize = fluidSize.toFixed(2);
+
+		let angleStep = (Math.PI * 2)/dirCount;
+
+		// UNCOMMENT to log FluidMovement
+		if (simulation.logData) {
+			log.logFluidVelocity(fluidSize, fluidVelocityMag, dirCount);
+			log.fluidMoveCount++;
+		}
+
+		for (let i = 0; i < dirCount; i++) {
+			let tmpDir = geometric.setMag(tmpVelocity, fluidVelocityMag);
+			tmpDir = geometric.rotate(tmpDir, angleStep * i);
+
+			fluid.addVelocity(tmpDir, fluidSize, [center[0] + tmpDir[0]/2, center[1] + tmpDir[1]/2]);
+		}
+
+		this.setFluidCellPolarity(center);
+	}
+
+	setFluidExplosion(center, size, strength) {
+		// UNCOMMENT to log Fluid Explosion
+		if (simulation.logData) {
+			log.logFluidExplosion(size, strength);
+			log.fluidExplosionCount++;
+		}
+
+		simulation.explosions.push(new effects.explosion(center, size, strength, 1));
+
+		this.setFluidCellPolarity(center);
+	}
+
+	setFluidflowfield(center, size, duration, form) {
+		if (form >= 8) {
+			form = Math.round((form - 8)/8.0);
+		} else {
+			form = Math.round(form/8.0);
+		}
+
+		// UNCOMMENT to log Fluidflowfield
+		if (simulation.logData) {
+			log.logFluidFlowfield(size, duration, form);
+			log.fluidFlowfieldCount++;
+		}
+
+		if (form >= 8) {
+			let dir = form % 4;
+			fluid.setFluidflowfieldHourglass(center, size, dir, form, duration);
+		} else {
+			let rotateDir = form % 2;
+			let crossRotate = Math.ceil((form + 1)/2.0) % 2;
+			fluid.setFluidflowfieldSwirl(center, size, rotateDir, crossRotate, form, duration);
+		}
+
+		this.setFluidCellPolarity(center);
+	}
+
+	setFluidCellPolarity(center) {
 		if (simulation.simulateFluidCells) {
 			let radius = 48;
 
@@ -476,129 +613,6 @@ class Particle {
 		}
 	}
 
-	setFluidVelocity(center, tmpVelocity) {
-		// Calculate Force and velocity Magnitude for Fluid Velocity
-		/*
-			Every time a reaction takes place it adds velocity to the fluid. It gets way bigger if more particles react then the normal
-			Reactioncount. In general the force varies according to the state. It is highest with the half of maxstate and lowest at max state and lower
-			at the starting state.
-
-			| State | 1  | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9  | 10 | 11 | 12 |
-			| Multi | 0  | 1 | 2 | 3 | 4 | 2 | 1 | .5| .25| 0  | 0  | X  |
-		*/
-		
-		let fluidVelocityMag = simulation.fluidResolution / 4;
-		let fluidSize = simulation.fluidResolution;
-		// let fluidMultiplier = .8;
-		let fluidMultiplierArray = [0, 1, 2, 3, 4, 2, 1, .5, .25, 0, 0, 0];
-
-		/*
-		fluidMultiplier = (-Math.abs(Math.abs(this.state) - simulation.stateMax/2 - .5) + simulation.stateMax/2)/2 + .25;
-		if (Math.abs(this.state) <= simulation.stateMax/2) {
-			fluidMultiplier += (simulation.stateMax/4 - fluidMultiplier)/2;
-		}
-		*/
-
-		let fluidMultiplier = fluidMultiplierArray[Math.abs(this.state)];
-
-		if (fluidMultiplier != 0) {
-			fluidVelocityMag *= fluidMultiplier;
-			fluidSize *= fluidMultiplier;
-	
-			// If Rection Particle Count is higher then reactionCount
-			if (this.tmpCalcParticles.length > this.reactionCount) {
-				fluidVelocityMag *= (this.tmpCalcParticles.length - this.reactionCount)/2 + 1;
-				fluidSize *= ((this.tmpCalcParticles.length - this.reactionCount)/2 + 1);
-			}
-	
-			let newParticleCount = Math.floor(this.tmpCalcParticles.length/2);
-			let angleStep = (Math.PI * 2)/newParticleCount;
-	
-			for (let i = 0; i < newParticleCount; i++) {
-				let tmpDir = geometric.setMag(tmpVelocity, fluidVelocityMag);
-				tmpDir = geometric.rotate(tmpDir, angleStep * i);
-	
-				fluid.addVelocity(tmpDir, fluidSize, [center[0] + tmpDir[0]/2, center[1] + tmpDir[1]/2]);
-			}
-	
-			if (simulation.logData) {
-				log.logReactionResult(this);
-				log.logFluidVelocity(center, fluidSize, fluidVelocityMag);
-			}
-		}
-	}
-	
-	mergeFunc() {
-		let self = this;
-
-		this.tmpCalcParticles.forEach(function (mergeParticle) {
-			if (!self.mergedParticles.includes(mergeParticle) && mergeParticle != self) {
-				self.mergedParticles.push(mergeParticle);
-				mergeParticle.merged = true;
-			}
-		});
-
-		this.updateVals();
-	}
-
-	setCellularAutomata(center, size, form, neighbourhood) {
-		// Neighbourhood
-		cellularAutomata.setNeighbourhood(center, size, form, neighbourhood);
-
-		// Rule
-		let ruleIndex = simulation.fluidTree.contentParticles(center, fluidParticleRadius).length;
-		ruleIndex = Math.min(ruleIndex, (caRules.rules.length - 1));
-
-		cellularAutomata.setRule(center, size, form, ruleIndex);
-		
-		// Animate
-		size = Math.floor(size/8);
-		cellularAutomata.animate(center, size, form);
-
-		// UNCOMMENT to log new cellular Automata
-		log.logCellularAutomata(center, size, ruleIndex, neighbourhood, form);
-	}
-
-	setCARule(center, size, form) {
-		// Rule
-		let ruleIndex = simulation.fluidTree.contentParticles(center, fluidParticleRadius).length;
-		ruleIndex = Math.min(ruleIndex, (caRules.rules.length - 1));
-
-		cellularAutomata.setRule(center, size, form, ruleIndex);
-
-		// UNCOMMENT to count Cellular Automata Rules
-		log.logCellularAutomataRule(center, size, ruleIndex, form);
-	}
-
-	setCANeighbourhood(center, size, form, neighbourhood) {
-		// Neighbourhood
-		cellularAutomata.setNeighbourhood(center, size, form, neighbourhood);
-
-		// UNCOMMENT to count Cellular Automata Rules
-		log.logCellularAutomataNeighbourhood(center, size, neighbourhood, form);
-	}
-
-	setCAAnimate(center, size, form) {
-		cellularAutomata.animate(center, size, form);
-
-		// UNCOMMENT to count Cellular Automata Animates
-		log.logCellularAutomataAnimate(center, size, form);
-	}
-
-	setTrails(center, size, trailLength, durationFactor) {
-		// Particle Trails
-		/*
-			If particle traisl are created the important values are size, trailLength and duration.
-		*/
-
-		let duration = 24 + durationFactor * 8;
-
-		effects.setTrails(center, size, trailLength, duration);
-
-		// UNCOMMENT to log new particle trails
-		log.logTrails();
-	}
-
 	reset() {
 		this.reaction = false;
 		this.merge = false;
@@ -608,17 +622,17 @@ class Particle {
 
 module.exports = Particle
 
-function getTorus(_Val) {
+function getTorus(val) {
 	let fieldWidth = simulation.fieldWidth;
 
-	while (_Val < 0) {
-		_Val += fieldWidth;
+	while (val < 0) {
+		val += fieldWidth;
 	}
-	while (_Val >= fieldWidth) {
-		_Val -= fieldWidth;
+	while (val >= fieldWidth) {
+		val -= fieldWidth;
 	}
 
-	return _Val;
+	return val;
 }
 
 // Add leading zeros

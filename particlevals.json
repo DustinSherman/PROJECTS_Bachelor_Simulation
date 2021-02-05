@@ -48,8 +48,8 @@
     "state": 6,
     "gravRadius": 96,
     "mass": 0.64,
-    "mergeCount": 2,
-    "reactionCount": 3,
+    "mergeCount": 3,
+    "reactionCount": 4,
     "explosionForce": 24,
     "explosionSize": 24
   },
