@@ -144,13 +144,13 @@ function setup() {
 	exports.tree = tree;
 
 	// FLUID
-	fluid.initParticles();
+	fluid.initFluid();
 	exports.fluid = fluid;
 
 	fluidTree = new quadtree([fieldWidth / 2, fieldWidth / 2], fieldWidth, fluidQuadtreeCapacity, fluid.particles);
 	exports.fluidTree = fluidTree;
 	
-	fluid.initFluidCells();
+	// fluid.initFluidCells();
 
 	// CELLULAR AUTOMATA
 	ca.init();
@@ -270,10 +270,11 @@ function draw() {
 
 
 
-			if (timePassed == 0) {
-				fluid.addVelocity([5, 5], 24, [fieldWidth/2, fieldWidth/2]);
+			if (timePassed == 8) {
+				fluid.addVelocity([fieldWidth/2, fieldWidth/2], [24, 24], 64);
 			}
 
+			console.log("fluid particle pos", fluid.particles[fluid.particles.length/2 + 48].pos, "index",fluid.particles.length/2 + 48);
 
 
 
@@ -333,14 +334,16 @@ function draw() {
 			}
 			*/
 
+			/*
 			for (let i = fluid.flowCells.length - 1; i >= 0; i--) {
 				if (fluid.flowCells[i].duration <= 0) {
 					fluid.flowCells.splice(i, 1);
 				}
 			}
+			*/
 
 			// Trailsupdate
-			effects.updateTrails();
+			// effects.updateTrails();
 
 			// Cellular Automata update
 			ca.update();
