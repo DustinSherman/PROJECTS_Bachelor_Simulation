@@ -11,19 +11,43 @@ const caRules = require("./cellularautomatarules.js");
 const fluid = require("./fluid.js");
 const log = require("./log.js");
 
-let velocityMaxAbs = .6;
+// let velocityMaxAbs = simulation.particleVelocityMaxAbs;
 let velocityMax = .1;
 let velocityReduce = .0008;
 let particleSize = 1;
 
-exports.velocityMaxAbs = velocityMaxAbs;
+// exports.velocityMaxAbs = velocityMaxAbs;
 exports.velocityMax = velocityMax;
 exports.velocityReduce = velocityReduce;
 exports.particleSize = particleSize;
 
-let fluidParticleRadius = 28;
-exports.fluidParticleRadius = fluidParticleRadius;
+let caRuleParticleRadius = 128;
+exports.caRuleParticleRadius = caRuleParticleRadius;
 let lowestAkin;
+
+// ParticleResult Values
+// The first values is the startingvalue and the second value is the increasing value
+let multiRange = [1, 7]
+let fluidMovementVelocity = [6, 1];
+let fluidMovementSize = [10, 3];
+let fluidExplosionSize = [32, 8];
+let fluidExplosionStrength = [8, 3];
+let fluidflowfieldSize = [64, 8];
+let fluidflowfieldDuration = [96, 48];
+let cANeighbourhoodRuleSize = [24, 5];
+let cellularAutomataSize = [24, 5];
+let cAAnimateSize = [8, 1];
+
+exports.multiRange = multiRange;
+exports.fluidMovementVelocity = fluidMovementVelocity;
+exports.fluidMovementSize = fluidMovementSize;
+exports.fluidExplosionSize = fluidExplosionSize;
+exports.fluidExplosionStrength = fluidExplosionStrength;
+exports.fluidflowfieldSize = fluidflowfieldSize;
+exports.fluidflowfieldDuration = fluidflowfieldDuration;
+exports.cANeighbourhoodRuleSize = cANeighbourhoodRuleSize;
+exports.cellularAutomataSize = cellularAutomataSize;
+exports.cAAnimateSize = cAAnimateSize;
 
 class Particle {
 	constructor(pos, velocity, state, akin, id) {
@@ -61,7 +85,7 @@ class Particle {
 		this.calced = false;
 		this.mass;
 
-		this.velocityMaxAbs = velocityMaxAbs;
+		this.velocityMaxAbs = simulation.particleVelocityMaxAbs;
 		this.velocityMax = velocityMax;
 		this.velocityReduce = velocityReduce;
 
@@ -367,6 +391,7 @@ class Particle {
 		if (simulation.logData) {
 			log.logBinary(binaryResult);
 			log.logReactionLowestAkin(lowestAkin);
+			log.saveReactionResults(this.state, lowestAkin);
 		}
 
 		// Reaction Results
@@ -375,47 +400,69 @@ class Particle {
 		reactionResult = rules.getParticleReactionResult(this.state, lowestAkin, simulation.phase);
 
 		// Result
-		// 0 = trail, 1 = CA Complete, 2 = CA Neighbourhood/Rule, 3 = CA Animate, 4 = FluidMovement, 5 = FluidExplosion, 6 = Fluidflowfield
+		/*
+			0 = FluidMovement (FM) / 1 = FluidExplosion (FE) / 2 = Fluidflowfield (FF) / 3 = CA Neighbourhood/Rule Set (CAS) / 4 = CA Complete (CAC) / 5 = CA Animate (CAA)
+
+			Multi is the multiplicator which determines strength or other values of the result. Multi is determined by the state of the reaction and then subtracted by
+			lowestAkin. If more particles react then the reactionCount the differnce is added to multi, which can also result in an value thats out of range. 
+			All values range as followed:
+
+			Multi 0-7;
+			FluidMovement fluidVelocity 2-16 fluidSize 6-20
+			FluidExplosion strength 8-32 size 32-96
+			FluidFlowfield duration 96-480 size 64-128
+			CA Set size 24-64
+			CA Complete size 24-64
+			CA Animate size 8-16
+		*/
 		if (reactionResult != undefined) {
-			let multi = Math.max(Math.floor(((simulation.stateMax/3 * 2 - Math.abs(simulation.stateMax/3 * 2 - Math.abs(this.state))) * 2 - lowestAkin)/2), 1);
+			// let multi = Math.max(Math.floor(((simulation.stateMax/3 * 2 - Math.abs(simulation.stateMax/3 * 2 - Math.abs(this.state))) * 2 - lowestAkin)/2), 1);
+			// let multi = Math.round(((simulation.stateMax/3 * 2 - Math.abs(simulation.stateMax/3 * 2 - Math.abs(this.state))) * 2 - lowestAkin)/4) + 2;
+
+			let multiArray = [1, 2, 3, 4, 5, 6, 7, 6, 4, 2, 0];
+			let multi = multiArray[Math.abs(this.state)];
+			multi -= lowestAkin;
+			multi += (this.tmpCalcParticles.length - this.reactionCount);
+			multi = Math.max(multi, 0);
 
 			if (reactionResult == 0) {
+				let velocity = fluidMovementVelocity[0] + multi * fluidMovementVelocity[1];
+				let size = fluidMovementSize[0] + multi * fluidMovementSize[1];
+
+				this.setFluidMovement(center, velocity, size, tmpVelocity, Math.ceil((binaryResult + 1)/4));
+			} else if (reactionResult == 1) {
+				let size = fluidExplosionSize[0] + multi * fluidExplosionSize[1];
+				let strength = fluidExplosionStrength[0] + multi * fluidExplosionStrength[1];
+
+				this.setFluidExplosion(center, size, strength);
+			} else if (reactionResult == 2) {
+				let size = fluidflowfieldSize[0] + multi * fluidflowfieldSize[1];
+				let duration = fluidflowfieldDuration[0] + multi * fluidflowfieldDuration[1];
+
+				this.setFluidflowfield(center, size, duration, binaryResult);
+			} else if (reactionResult == 3) {
+				// Form 0 = rectangle, 1 = circle
+				let form = Math.abs(this.state) % 2;
+				let size = cANeighbourhoodRuleSize[0] + multi * cANeighbourhoodRuleSize[0];
+
+				this.setCANeighbourhoodRule(center, size, form, binaryResult);
+			} else if (reactionResult == 4) {
+				// Form 0 = rectangle, 1 = circle
+				let form = Math.abs(this.state) % 2;
+				let size = cellularAutomataSize[0] + multi * cellularAutomataSize[1];
+
+				this.setCellularAutomata(center, size, form, binaryResult);
+			} else if (reactionResult == 5) {
+				// Form 0 = rectangle, 1 = circle
+				let form = Math.abs(this.state) % 2;
+				let size = cAAnimateSize[0] + multi * cAAnimateSize[1];
+
+				this.setCAAnimate(center, size, form);
+			} else if (reactionResult == 6) {
 				let size = Math.floor(multi * 2/3);
 				let trailLength = multi * 24;
 
 				this.setTrails(center, size, trailLength, binaryResult);
-			} else if (reactionResult == 1) {
-				// Form 0 = rectangle, 1 = circle
-				let form = Math.abs(this.state) % 2;
-				let size = multi * 4;
-
-				this.setCellularAutomata(center, size, form, binaryResult);
-			} else if (reactionResult == 2) {
-				// Form 0 = rectangle, 1 = circle
-				let form = Math.abs(this.state) % 2;
-				let size = multi * 4;
-
-				this.setCANeighbourhoodRule(center, size, form, binaryResult);
-			} else if (reactionResult == 3) {
-				// Form 0 = rectangle, 1 = circle
-				let form = Math.abs(this.state) % 2;
-				let size = Math.floor(multi/4);
-
-				this.setCAAnimate(center, size, form);
-			} else if (reactionResult == 4) {
-				let strength = multi/24 + 1;
-
-				this.setFluidMovement(center, tmpVelocity, strength, Math.ceil((binaryResult + 1)/4));
-			} else if (reactionResult == 5) {
-				let size = multi * 6;
-				let strength = multi * 4;
-
-				this.setFluidExplosion(center, size, strength);
-			} else if (reactionResult == 6) {
-				let size = multi * 8;
-				let duration = multi * 48;
-
-				this.setFluidflowfield(center, size, duration, binaryResult);
 			}
 		}
 
@@ -423,17 +470,12 @@ class Particle {
 		/*
 			If the real reactionCount is higher than the reactionCount a shockwave is triggered which is only a visual effect in the frontend. The strength is determined
 			by the state.
-
-			| State | 1  | 2  | 3  | 4  | 5 | 6  | 7 | 8  | 9 | 10 | 11 | 12 |
-			| Multi | 16 | 14 | 12 | 10 | 8 | 7.5| 7 | 6.5| 6 | 5.5| 5  | X  |
 		*/
 
 		if (this.tmpCalcParticles.length > this.reactionCount) {
 			let shockwaveMulti = [32, 28, 24, 20, 16, 15, 14, 13, 12, 11, 10, 0];
 
 			effects.setShockwave(this.pos, shockwaveMulti[Math.abs(this.state)]);
-
-			log.shockWaveCount++;
 		}
 	}
 	
@@ -454,7 +496,7 @@ class Particle {
 
 	setCellularAutomata(center, size, form, neighbourhood) {
 		// Rule
-		let ruleIndex = simulation.tree.contentParticles(center, fluidParticleRadius, 0).length;
+		let ruleIndex = simulation.tree.contentParticles(center, caRuleParticleRadius, 0).length;
 		ruleIndex = Math.min(ruleIndex, (caRules.rules.length - 1));
 
 		// UNCOMMENT to log new cellular Automata
@@ -474,7 +516,7 @@ class Particle {
 
 	setCANeighbourhoodRule(center, size, form, neighbourhood) {
 		// Rule
-		let ruleIndex = simulation.tree.contentParticles(center, fluidParticleRadius, 0).length;
+		let ruleIndex = simulation.tree.contentParticles(center, caRuleParticleRadius, 0).length;
 		ruleIndex = Math.min(ruleIndex, (caRules.rules.length - 1));
 
 		// UNCOMMENT to log Cellular Automata Neighbourhood and Cellular Automata Rules
@@ -511,38 +553,18 @@ class Particle {
 		effects.setTrails(center, size, trailLength, duration);
 	}
 
-	setFluidMovement(center, tmpVelocity, multi, dirCount) {
-		// Calculate Force and velocity Magnitude for Fluid Velocity
-		
-		let fluidVelocityMag = simulation.fluidResolution/4;
-		let fluidSize = simulation.fluidResolution;
-
-		fluidVelocityMag *= multi;
-		fluidSize *= multi;
-
-		// If Rection Particle Count is higher then reactionCount
-		if (this.tmpCalcParticles.length > this.reactionCount) {
-			fluidVelocityMag *= (this.tmpCalcParticles.length - this.reactionCount)/2 + 1;
-			fluidSize *= ((this.tmpCalcParticles.length - this.reactionCount)/2 + 1);
-		}
-
-		fluidVelocityMag = fluidVelocityMag.toFixed(2);
-		fluidSize = fluidSize.toFixed(2);
-
-		let angleStep = (Math.PI * 2)/dirCount;
+	setFluidMovement(center, velocity, size, dir) {
+		let fluidVelocityMag = velocity;
+		let fluidSize = size;
 
 		// UNCOMMENT to log FluidMovement
 		if (simulation.logData) {
-			log.logFluidVelocity(fluidSize, fluidVelocityMag, dirCount);
+			log.logFluidVelocity(fluidSize, fluidVelocityMag, dir);
 			log.fluidMoveCount++;
 		}
 
-		for (let i = 0; i < dirCount; i++) {
-			let tmpDir = geometric.setMag(tmpVelocity, fluidVelocityMag);
-			tmpDir = geometric.rotate(tmpDir, angleStep * i);
-
-			fluid.addVelocity(tmpDir, fluidSize, [center[0] + tmpDir[0]/2, center[1] + tmpDir[1]/2]);
-		}
+		let tmpDir = geometric.setMag(dir, fluidVelocityMag);
+		fluid.addVelocity(tmpDir, fluidSize, [center[0] + tmpDir[0]/2, center[1] + tmpDir[1]/2]);
 
 		this.setFluidCellPolarity(center);
 	}

@@ -1,6 +1,10 @@
 let hamburgerElement = document.getElementById('hamburger');
 let navElement = document.getElementById("nav");
 // let overlayElement = document.getElementById("overlay");
+let loaderElement = document.getElementById('loader');
+let loaderVal = 0;
+let loaderbarElement = document.getElementById('loader-bar');
+let loaderpercentElement = document.getElementById('loader-percent');
 
 // Toogle Classes on hamburger Menu
 hamburgerElement.addEventListener("click", function () {

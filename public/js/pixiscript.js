@@ -20,9 +20,11 @@ let caSprites = [];
 
 // Values
 let timePassed = 0;
+let relativeTimePassed = 0;
 let fps = 24;
 let play = true;
 let speed = 1;
+let relativeIndex;
 
 let fpsInterval, timeStart, timeNow, timeThen, timeElapsed;
 
@@ -86,6 +88,8 @@ function init() {
     // Set Date
     startDate = convertDate(new Date(startDate));
 
+    console.log("Init Pixi");
+
     initFluid();
     initCellularAutomata();
 
@@ -98,6 +102,8 @@ function init() {
     window.onload = animate();
 
     addDataToHTML();
+
+    console.log("Init Pixi finished");
 }
 
 function animate() {
@@ -116,18 +122,32 @@ function animate() {
 }
 
 function draw() {
-    drawFluidCells();
+    // Remove loading Class from body
+    if (timePassed == 0) {
+        document.body.classList.remove('loading');
+    }
+
+    // Check if new Data must be loaded
+    if (timePassed % saveFreq == 0) {
+        loadData(timePassed);
+    }
+
+    relativeIndex = Math.floor(timePassed/saveFreq) % 2;
+
+    // drawFluidCells();
     drawParticles();
-    drawParticleTrails();
     drawFluid();
-    drawCellularAutomata();
-    drawShockwaves();
+    // drawCellularAutomata();
+    
+    // drawParticleTrails();
+    // drawShockwaves();
 
     if (play) {
         timePassed++;
+        relativeTimePassed = timePassed - Math.floor(timePassed/saveFreq) * saveFreq;
 
         updateTime(timePassed);
-    }    
+    }
 
     if (timePassed >= timeEnd)  {
         timePassed = 0;
@@ -141,9 +161,8 @@ function draw() {
 
 function drawParticles() {
     // Add new Particles
-    for (let i = particleSprites.length; i < particles[timePassed].length; i++) {
-        // Check for no merged Particles
-        if (particles[timePassed][i][2] != undefined) {
+    if (particleSprites.length < particles[relativeIndex][relativeTimePassed].length) {
+        for (let i = particleSprites.length; i < particles[relativeIndex][relativeTimePassed].length; i++) {
             particleSprites[i] = new Sprite(
                 resources['../assets/particle_0.png'].texture
             );
@@ -154,27 +173,23 @@ function drawParticles() {
     }
 
     // Delete merged particles
-    for (let i = particleSprites.length - 1; i >= 0; i--) {
-        if (particles[timePassed][i][2] == undefined) {
+    if (particleSprites.length > particles[relativeIndex][relativeTimePassed].length) {
+        for (let i = particleSprites.length - 1; i >= particles[relativeIndex][relativeTimePassed].length; i--) {
             particleSprites[i].splice(i, 1);
         }
     }
 
-    for (let i = 0; i < particles[timePassed].length; i++) {
-        particleSprites[i].position.set(particles[timePassed][i][0], particles[timePassed][i][1]);
+    for (let i = 0; i < particleSprites.length; i++) {
+        particleSprites[i].position.set(particles[relativeIndex][relativeTimePassed][i][0], particles[relativeIndex][relativeTimePassed][i][1]);
 
         if (timePassed > 0) {
             // Set Color of particles
-            if (particles[timePassed][i][2] != particles[timePassed - 1][i][2]) {
-                let colorIndex = Math.abs(particles[timePassed][i][2]);
-                particleSprites[i].tint = particles[timePassed][i][2] > 0 ? colorsPos[colorIndex] : colorsNeg[colorIndex];
-            }
+            let colorIndex = Math.abs(particles[relativeIndex][relativeTimePassed][i][2]);
+            particleSprites[i].tint = particles[relativeIndex][relativeTimePassed][i][2] > 0 ? colorsPos[colorIndex] : colorsNeg[colorIndex];
 
             // Set size of particles
-            if (particles[timePassed][i][3] != particles[timePassed - 1][i][3]) {
-                let scale = radiVals[particles[timePassed][i][3]];
-                particleSprites[i].scale.set(scale, scale);
-            }
+            let particleScale = radiVals[particles[relativeIndex][relativeTimePassed][i][3]];
+            particleSprites[i].scale.set(particleScale * scale, particleScale * scale);
         }
     }
 }
@@ -182,6 +197,8 @@ function drawParticles() {
 // ////////////////////////////// PARTICLE FLUID //////////////////////////////
 
 function initFluid() {
+    console.log("init Pixi Fluid");
+
     // Intialize Fluid Cells
     let rowCount = (fieldWidth/fluidCellResolution);
     let fluidCellCount = rowCount * rowCount;
@@ -232,18 +249,20 @@ function initFluid() {
 
 function drawFluid() {
     // Refresh fluid particle vals
+    // 3 Values per fluidParticle are saved, therefore we divide the total length of the array at this timeIndex by 3
     if (timePassed > 0) {
-        for (let i = 0; i < fluid[timePassed].length; i++) {
-            let index = fluid[timePassed][i][0];
+        for (let i = 0; i < fluid[relativeIndex][relativeTimePassed].length/3; i++) {
+            // Parse the hex Data to a decimal number
+            let index = fluid[relativeIndex][relativeTimePassed][i * 3];
             let tmpDistance;
 
             if (tmpFluidData[index][2] < alphaDistance) {
-                tmpDistance = getDistance(fluidOrigins[index], [fluid[timePassed][i][1], fluid[timePassed][i][2]]);
+                tmpDistance = getDistance(fluidOrigins[index], [fluid[relativeIndex][relativeTimePassed][i * 3 + 1], fluid[relativeIndex][relativeTimePassed][i * 3 + 2]]);
             } else {
                 tmpDistance = alphaDistance;
             }
 
-            tmpFluidData[index] = [fluid[timePassed][i][1], fluid[timePassed][i][2], tmpDistance];
+            tmpFluidData[index] = [fluid[relativeIndex][relativeTimePassed][i * 3 + 1], fluid[relativeIndex][relativeTimePassed][i * 3 + 2], tmpDistance];
         }
     }
 
@@ -256,7 +275,7 @@ function drawFluid() {
                 alpha = (tmpFluidData[i][2]/alphaDistance).toFixed(2);
             } else {
                 alpha = 1;
-            }
+            }       
 
             fluidSprites[i].alpha = alpha;
             fluidSprites[i].position.set(tmpFluidData[i][0], tmpFluidData[i][1]);
@@ -265,14 +284,17 @@ function drawFluid() {
 }
 
 function drawFluidCells() {
-    for (let i = 0; i < fluidCells[timePassed].length; i++) {
-        if (fluidCells[timePassed][i][0] != undefined) {
-            let fluidColorIndex = Math.min(fluidCells[timePassed][i][0], fluidColorLength - 1);
-            let fluidColorPolarityIndex = Math.min(Math.max(fluidCells[timePassed][i][1], -fluidColorPolarityLength), fluidColorPolarityLength) + fluidColorPolarityLength;
+    // 3 Values per fluidCell are saved, therefore we divide the total length of the array at this timeIndex by 3
+    for (let i = 0; i < fluidCells[relativeTimePassed].length/3; i++) {
+        if (fluidCells[relativeTimePassed][i * 3] != undefined) {
+            let fluidColorIndex = Math.min(fluidCells[relativeTimePassed][i * 3 + 1], fluidColorLength - 1);
+            let fluidColorPolarityIndex = Math.min(Math.max(fluidCells[relativeTimePassed][i * 3 + 2], -fluidColorPolarityLength), fluidColorPolarityLength) + fluidColorPolarityLength;
     
             let color = fluidCellColors[fluidColorPolarityIndex][fluidColorIndex];
     
-            fluidCellSprites[i].tint = color;
+            let index = fluidCells[relativeTimePassed][i * 3];
+
+            fluidCellSprites[index].tint = color;
         }
     }
 }
@@ -284,6 +306,8 @@ let caAliveCount = [];
 let caAliveCountMax = 64;
 
 function initCellularAutomata() {
+    console.log("Init Pixi CA");
+
     let rowCount = fieldWidth/cellularAutomataResolution;
 
     let cellularAutomataContainer = new PIXI.Container();
@@ -330,8 +354,8 @@ function updateCellularAutomata() {
 
 function drawCellularAutomata() {
     // Update Cells
-    for (let i = 0; i < cellularAutomataData[timePassed].length; i++) {
-        let index = cellularAutomataData[timePassed][i];
+    for (let i = 0; i < cellularAutomataData[relativeTimePassed].length; i++) {
+        let index = cellularAutomataData[relativeTimePassed][i];
 
         caCells[index] = !caCells[index];
 
@@ -367,15 +391,141 @@ function drawCellularAutomata() {
 */
 
 function drawParticleTrails() {
-    for (let i = 0; i < particleTrails[timePassed].length; i++) {
-        let currentParticleTrailData = [particleTrails[timePassed][i][0], particleTrails[timePassed][i][1], particleTrails[timePassed][i][2], particleTrails[timePassed][i][1]];
+    // The traildata contains these infos in this order: [id][pos.x][pos.y][trailLength]
+    // the Pixi TrailData contaisn these infos in this order: [id][trailLength]
 
-        currentParticleTrails.push(currentParticleTrailData);
+    for (let i = 0; i < particleTrails[relativeTimePassed].length; i++) {
+        let newTrail = true;
+        let trailId = particleTrails[relativeTimePassed][i][0];
 
-        particleTrailLines.push(new PIXI.Graphics());
+        // Check if the Trail is not allready registered
+        for (let j = 0; j < currentParticleTrails.length; j++) {
+            if (trailId == currentParticleTrails[j][0]) {
+                newTrail = false;
+                break;
+            }
+        }
 
-        app.stage.addChild(particleTrailLines[i]);
+        if (newTrail) {
+            let currentParticleTrailData = [particleTrails[relativeTimePassed][i][0], particleTrails[relativeTimePassed][i][3]];
+            currentParticleTrails.push(currentParticleTrailData);
+            particleTrailLines.push(new PIXI.Graphics());
+            app.stage.addChild(particleTrailLines[i]);
+        }
     }
+
+    // Delete old Trails
+    for (let i = currentParticleTrails.length - 1; i >= 0; i--) {
+        let trailId = currentParticleTrails[i][0];
+        let oldTrail = true;
+
+        for (let j = 0; j < particleTrails[relativeTimePassed].length; j++) {
+            if (particleTrails[relativeTimePassed][i][0] == trailId) {
+                oldTrail = false;
+                break;
+            }
+        }
+
+        if (oldTrail) {
+            app.stage.removeChild(particleTrailLines[i]);
+
+            currentParticleTrails.splice(i, 1);
+            particleTrailLines.splice(i, 1);
+        }
+    }
+
+    // Draw Trails
+    for (let i = 0; i < currentParticleTrails.length; i++) {
+        let drawTrail = true;
+
+        let trailLengthIndex = 0;
+        let trailLength = currentParticleTrails[i][1];
+        let currentId = currentParticleTrails[i][0];
+        let tmpTime = timePassed;
+
+        particleTrailLines[i].clear();
+        particleTrailLines[i].lineStyle(trailStroke, 0xFFFFFF, 1);
+
+        let pos;
+
+        for (let j = 0; j < particleTrails[relativeTimePassed].length; j++) {
+            if (currentId == particleTrails[relativeTimePassed][j][0]) {
+                pos = [particleTrails[relativeTimePassed][j][1], particleTrails[relativeTimePassed][j][2]];
+                break;
+            }
+        }
+
+        if (pos != undefined) {
+            particleTrailLines[i].moveTo(parseFloat(pos[0]), parseFloat(pos[1]));
+        }
+
+        while(drawTrail) {
+            drawTrail = false;
+            tmpTime--;
+
+            for (let j = 0; j < particleTrails[tmpTime].length; j++) {
+                if (currentId == particleTrails[tmpTime][j][0]) {
+                    pos = [particleTrails[tmpTime][j][1], particleTrails[tmpTime][j][2]];
+                    drawTrail = true;
+                    break;
+                }
+            }
+
+            let prevPos = [particleTrails[tmpTime - 1][j][1], particleTrails[tmpTime - 1][j][2]];
+
+            // If Trail crosses border
+            let torus = false;
+            let torusPos = [[pos[0], pos[1]], [prevPos[0], prevPos[1]]];
+            if (prevPos[0] - pos[0] > fieldWidth/2) {
+                torus = true;
+                torusPos[0][0] += fieldWidth;
+                torusPos[1][0] -= fieldWidth;
+            } else if (prevPos[0] - pos[0] < -fieldWidth/2) {
+                torus = true;
+                torusPos[0][0] -= fieldWidth;
+                torusPos[1][0] += fieldWidth;
+            }
+            if (prevPos[1] - pos[1] > fieldWidth/2) {
+                torus = true;
+                torusPos[0][1] += fieldWidth;
+                torusPos[1][1] -= fieldWidth;
+            } else if (prevPos[1] - pos[1] < -fieldWidth/2) {
+                torus = true;
+                torusPos[0][1] -= fieldWidth;
+                torusPos[1][1] += fieldWidth;
+            }
+
+            if (torus) {
+                particleTrailLines[i].lineTo(torusPos[0][0].toFixed(1), torusPos[0][1].toFixed(1));
+
+                particleTrailLines[i].lineStyle(16, 0xFF0000, .1);
+                particleTrailLines[i].lineTo(torusPos[1][0].toFixed(1), torusPos[1][1].toFixed(1));
+
+            } else {
+                particleTrailLines[i].lineStyle(trailStroke, 0xFFFFFF, 1);
+            }
+
+            particleTrailLines[i].lineTo(pos[0], pos[1]);
+
+            if (drawTrail) {
+                trailLengthIndex++;
+
+                if (trailLengthIndex >= trailLength) {
+                    drawTrail = false;
+                }
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+
 
     for (let i = currentParticleTrails.length - 1; i >= 0; i--) {
         // Delete dead trails

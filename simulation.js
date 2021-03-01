@@ -16,7 +16,7 @@ const log = require("./log.js");
 
 // VARIABLES
 let simulate = true;
-let timeEnd = 21600;
+let timeEnd = 1200;
 let fieldWidth = 768;
 let logData = true;
 // Particle Values
@@ -51,14 +51,17 @@ exports.fluidQuadtreeCapacity = fluidQuadtreeCapacity;
 
 // Timing
 // 5m / 24 fps => 7200
+// 8m / 24 fps => 11520
+// 9m / 24 fps => 12960
 // 10m / 24 fps => 14400
 // 11m / 24fps => 15840
+// 12m / 24fps => 17280
 // 13.30 m / 24 fps => 19440
 // 15m / 24 fps => 21600
 exports.timeEnd = timeEnd;
 let realtimeStart = Date.now();
 exports.realtimeStart = realtimeStart;
-let timeSteps = [15840, 19440];
+let timeSteps = [0, 11520, 12960];
 exports.timeSteps = timeSteps;
 let phase = 0;
 exports.phase = phase;
@@ -72,6 +75,10 @@ exports.startDate = startDate;
 
 let particles = [];
 let particleStats = [];
+
+// Particle Vals
+let particleVelocityMaxAbs = .6;
+exports.particleVelocityMaxAbs = particleVelocityMaxAbs;
 
 let explosions = [];
 exports.explosions = explosions;
@@ -116,7 +123,17 @@ function setup() {
 	// PARTICLES
 	effects.explosionSetup();
 
-	startPosition();
+	// startPosition();
+
+
+	/*
+	particles.push(new particle([fieldWidth/2, fieldWidth/2], [0, 1], 4, 2, 0));
+	particles[0].polarity = 1;
+	particles.push(new particle([fieldWidth/2, fieldWidth/2], [1, 1], 4, 2, 1));
+	particles.push(new particle([fieldWidth/2, fieldWidth/2], [1, 0], 4, 2, 2));
+	// particles.push(new particle([fieldWidth/2, fieldWidth/2], [0, -1], 4, 2, 3));
+	*/
+
 	exports.particles = particles;
 
 	// Upadte Particle Statistics
@@ -175,17 +192,19 @@ function startPosition() {
 
 	// Set Start Binary String
 	for (let i = 0; i < particles.length; i++) {
+		// UNCOMMENT for Ordered Start Position
 		if (i % 2 == 1) {
 			startBinString += '0';
 		} else {
 			startBinString += '1';
 		}
+
+		// UNCOMMENT for Unordered Start Position
+		// startBinString += Math.round(Math.random());
 	}
 
 	// Set Start Vals
 	for (let i = 0; i < particles.length; i++) {
-		// UNCOMMENT to set a random starting position
-		// startBinString = startBinString.shuffle();
 
 		if (startBinString.charAt(i) == '0') {
 			particles[i].state = -1;
@@ -237,8 +256,35 @@ exports.timePassed = timePassed;
 function draw() {
 	if (simulate) {
 		while (timePassed < timeEnd) {
-			gatherData();
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+			if (timePassed == 0) {
+				fluid.addVelocity([5, 5], 24, [fieldWidth/2, fieldWidth/2]);
+			}
+
+
+
+
+
+
+
+
+
+
+			gatherData();
+			
 			// Print process to console
 			process.stdout.clearLine();
 			process.stdout.cursorTo(0);
@@ -281,9 +327,11 @@ function draw() {
 			exports.fluidTree = fluidTree;
 
 			// Fluid Flow Cells update
+			/*
 			for (let i = 0; i < fluid.flowCells.length; i++) {
-				fluid.flowCells[i].update();
+				fluid.flowCells[i].updateFluidParticles();
 			}
+			*/
 
 			for (let i = fluid.flowCells.length - 1; i >= 0; i--) {
 				if (fluid.flowCells[i].duration <= 0) {
@@ -291,22 +339,30 @@ function draw() {
 				}
 			}
 
+			// Trailsupdate
+			effects.updateTrails();
+
 			// Cellular Automata update
 			ca.update();
 
 			// Update phase
 			for (let i = 0; i < timeSteps.length; i++) {
 				if (timePassed == timeSteps[i]) {
-					phase = i + 1;
+					phase = i;
+
+					// Init End Phase
+					if (phase == timeSteps.length - 1) {
+						log.saveReactionFile();
+					}
 
 					if (logData) {
 						log.logNewPhase(phase);
 					}
 				}
 			}
-			// Shrink / End Phase
-			if (phase == timeSteps.length) {
-				shrinkPhase();
+			// End Phase
+			if (phase == timeSteps.length - 1) {
+				endPhase();
 			}
 
 			// Update Particle Statistics
@@ -369,19 +425,24 @@ function particleAction(particle, type) {
     }
 }
 
-function shrinkPhase() {
-	// Move every particle to the middle
+// ////////////////////////////// PHASES
+
+let totalTimeEndPhase = (timeEnd - timeSteps[timeSteps.length - 1]) - 60;
+let fluidParticleMaxVelocityReduce = fluid.maxVelocity/totalTimeEndPhase;
+let velocityMaxAbsReduce = particleVelocityMaxAbs/totalTimeEndPhase;
+
+function endPhase() {
+	// Slow all particles down
 	particles.forEach(function (particle) {
-		if (!particle.merged) {
-			let dir = [fieldWidth/2 - particle.pos[0], fieldWidth/2 - particle.pos[1]];
-			let distToCenter = geometric.dist([fieldWidth/2, fieldWidth/2], particle.pos);
-
-			let force = distToCenter/(fieldWidth/2);
-			dir = geometric.setMag(dir, force);
-
-			particle.addAcceleration(dir);
+		if (particle.velocityMaxAbs > 0) {
+			particle.velocityMaxAbs -= velocityMaxAbsReduce;
+		} else if (particle.velocityMaxAbs < 0) {
+			particle.velocityMaxAbs = 0;
 		}
 	});
+	
+	// Slow all fluid particles down
+	fluid.reduceFluidParticleMaxVelocity(fluidParticleMaxVelocityReduce);
 
 	// Decrease Rule of CA
 	let ruleDecreaseFreq = Math.floor((timeEnd - timeSteps[timeSteps.length - 1])/caRuleCount);
@@ -397,7 +458,20 @@ function shrinkPhase() {
 			}
 		});
 	}
+
+	// Decrease all fluid Cells
+	let fluidCellDecreaseFreq = Math.floor((timeEnd - timeSteps[timeSteps.length - 1])/caRuleCount) * 2;
+
+	if ((timePassed - timeSteps[timeSteps.length - 1]) % fluidCellDecreaseFreq == 0) {
+		fluid.fluidCells.forEach(function (fluidCell) {
+			if (fluidCell[0] > fluid.fluidCellBaseParticleCount) {
+				fluidCell[0]--;
+			}
+		})
+	}
 }
+
+// ////////////////////////////// DATA
 
 function gatherData() {
 	// Save Data
@@ -420,19 +494,20 @@ function gatherData() {
 	fluidData = [];
 
 	for (let i = 0; i < fluid.particles.length; i++) {
-		let tmpData = [];
+		// let index = fluid.particles[i].index.toString(16);
+		// index = Number(index);
 
-		tmpData.push(fluid.particles[i].index);
-		tmpData.push(parseFloat(fluid.particles[i].pos[0].toFixed(decimals)));
-		tmpData.push(parseFloat(fluid.particles[i].pos[1].toFixed(decimals)));
+		let index = fluid.particles[i].index;
 
-		fluidData.push(tmpData);
+		fluidData.push(index);
+		fluidData.push(parseFloat(fluid.particles[i].pos[0].toFixed(decimals)));
+		fluidData.push(parseFloat(fluid.particles[i].pos[1].toFixed(decimals)));
 	}
 
 	tmpFluidData = [];
 
 	if (timePassed > 0) {
-		tmpFluidData = Array.from(compareArray(fluidData, preFluidData));
+		tmpFluidData = Array.from(compareFluidArray(fluidData, preFluidData));
 	} else {
 		tmpFluidData = Array.from(fluidData);
 	}
@@ -459,7 +534,11 @@ function gatherData() {
 
 	// Save JSON Files
 	if (((timePassed) % data.saveFreq == 0 && timePassed != 0) || timePassed >= timeEnd) {
-		data.save((timePassed) / data.saveFreq - 1);
+		let saveIndex = ((timePassed) / data.saveFreq - 1);
+
+		data.save(saveIndex);
+
+		// data.rewrite(saveIndex);
 
 		process.stdout.clearLine();
 		process.stdout.cursorTo(0);
@@ -498,19 +577,16 @@ function getCurrentFPS() {
 
 exports.getCurrentFPS = getCurrentFPS;
 
-function compareArray(_RawData, _PreRawData) {
+function compareFluidArray(_RawData, _PreRawData) {
 	let data = Array.from(_RawData);
 	let preData = Array.from(_PreRawData);
 	let tmpData = [];
 
-	for (let i = 0; i < data.length; i++) {
+	for (let i = 0; i < data.length/3; i++) {
 		let dataChanged = false;
 
-		for (let j = 0; j < data[i].length; j++) {
-			if (data[i][j] !== preData[i][j]) {
-				dataChanged = true;
-				break;
-			}
+		if (data[i * 3 + 1] !== preData[i * 3 + 1] || data[i * 3 + 2] !== preData[i * 3 + 2]) {
+			dataChanged = true;
 		}
 
 		if (dataChanged) {
@@ -520,7 +596,7 @@ function compareArray(_RawData, _PreRawData) {
 				tmpDataObject.push(data[i][j]);
 			}
 
-			tmpData.push(tmpDataObject);
+			tmpData.push(data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
 		}
 	}
 

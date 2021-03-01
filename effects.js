@@ -11,6 +11,8 @@ let explosionMaxSize = 64;
 let explosionMinForce = .2;
 let explosionMaxForce = 64;
 
+let trails = [];
+
 function explosionSetup() {
 	for (let i = 0; i <= explosionMaxSize - explosionMinSize; i++) {
 		explosionSquareVals[i] = [];
@@ -23,10 +25,10 @@ function explosionSetup() {
 
 class explosion {
 	// particleType determines which kind of particles are affected (0 = normal particles, 1 = fluid particles)
-	constructor(_Pos, _MaxSize, _Force, particleType) {
-		this.pos = [_Pos[0], _Pos[1]];
-		this.maxSize = Math.round(geometric.constrain(_MaxSize, explosionMinSize, explosionMaxSize));
-		this.force = geometric.constrain(_Force, explosionMinForce, explosionMaxForce);
+	constructor(pos, maxSize, force, particleType) {
+		this.pos = [pos[0], pos[1]];
+		this.maxSize = Math.round(geometric.constrain(maxSize, explosionMinSize, explosionMaxSize));
+		this.force = geometric.constrain(force, explosionMinForce, explosionMaxForce);
 		this.particleType = particleType;
 		this.tmpSize = 1;
 		this.index = 0;
@@ -73,12 +75,21 @@ class explosion {
 	}
 }
 
+// ////////////////////////////// TRAILS
+
+function addTrail(id, duration, trailLength) {
+	trails.push([id, duration, trailLength]);
+}
+
 function setTrails(pos, size, trailLength, duration) {
 	let trailParticles = [];
 	trailParticles = trailParticles.concat(simulation.tree.contentParticles(pos, size, 0));
 
 	trailParticles.forEach(function(particle) {
 		if (!particle.merged) {
+			addTrail(particle.id, duration, trailLength);
+
+			/*
 			let tmpData = [];
 	
 			tmpData.push(particle.id);
@@ -86,17 +97,44 @@ function setTrails(pos, size, trailLength, duration) {
 			tmpData.push(duration);
 	
 			simulation.trailData.push(tmpData);
+			*/
 		}
 	});
 }
+
+function updateTrails() {
+	for (let i = trails.length - 1; i >= 0; i--) {
+		if (trails[i][1] <= 0) {
+			trails.splice(i, 1);
+		}
+	}
+
+	for (let i = 0; i < trails.length; i++) {
+		let tmpData = [];
+
+		tmpData.push(trails[i][0]);
+		tmpData.push(simulation.particles[trails[i][0]].pos[0]);
+		tmpData.push(simulation.particles[trails[i][0]].pos[1]);
+		tmpData.push(trails[i][2]);
+
+		simulation.trailData.push(tmpData);
+
+		trails[i][1]--;
+	}
+}
+
+// ////////////////////////////// SHOCKWAVES
 
 function setShockwave(pos, strength) {
 	simulation.shockwaveData.push([pos[0], pos[1], strength]);
 }
 
+// ////////////////////////////// EXPORTS
+
 var effects = module.exports = {
 	explosionSetup,
 	explosion,
 	setTrails,
-	setShockwave
+	setShockwave,
+	updateTrails
 }

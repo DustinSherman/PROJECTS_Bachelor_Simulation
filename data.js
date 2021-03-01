@@ -46,6 +46,38 @@ function save(index) {
 
 exports.save = save;
 
+/*
+function rewrite(index) {
+    let saveDestination = 'public/data/' + simulation.startHexString + '/';
+
+    // All relevant files that contain string, which should be written without a certain sign (in this case ")
+    let fileNames = ['fluid', 'fluidCells'];
+    
+    for (let i = 0; i < fileNames.length; i++) {
+        let fileName = fileNames[i];
+
+        let data = fs.readFileSync(saveDestination + pad(index, 6) + '_' + fileName + '.json');
+
+
+        console.log("Data length", data.length);
+
+        for (let i = 0; i < data.length/3; i++) {
+            let tmpData = data[i * 3];
+
+            console.log("Data type ", typeof(tmpData), " Data ", tmpData);
+
+            data[i * 3] = tmpData.replace(/["']/g, "");
+        }
+
+        // let newData = data.replace(/["']/g, "");
+  
+        fs.writeFileSync(saveDestination + pad(index, 6) + '_' + fileName + '.json', newData);
+    }
+}
+
+exports.rewrite = rewrite;
+*/
+
 function saveFile(index, dataObject, fileName) {
     let saveDestination = 'public/data/' + simulation.startHexString + '/';
 
@@ -55,6 +87,6 @@ function saveFile(index, dataObject, fileName) {
 
 // Add leading zeros
 function pad(num, size) {
-    var s = "000000000" + num;
+    let s = "000000000" + num;
     return s.substr(s.length - size);
 }

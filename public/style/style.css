@@ -27,37 +27,150 @@ body.loading #loader {
   width: 100%;
   height: 100%;
   opacity: 1;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  background: #0e0e0e;
 }
 
+/*
 #loader {
-  background: #1e1e1e;
-  background: -webkit-gradient(linear, left bottom, left top, color-stop(45%, #0e0e0e), color-stop(50%, #111111), color-stop(55%, #0e0e0e));
-  background: linear-gradient(0deg, #0e0e0e 45%, #111111 50%, #0e0e0e 55%);
+    background: $graydark;
+    background: linear-gradient(0deg, rgba(14, 14, 14, 1) 45%, rgb(17, 17, 17) 50%, rgba(14, 14, 14, 1) 55%);
+    position: relative;
+    transition: opacity .5s ease, height .5s ease;
+    height: 0;
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+
+    #loader-percent {
+        font-family: 'InconsolataCondensed-Black', 'Lucida Console', Monaco, monospace;
+        color: #fff;
+        text-align: center;
+        width: 100%;
+        display: block;
+        position: absolute;
+        top: calc(50% - 20px);
+    }
+
+    #loader-bar {
+        background: #fff;
+        height: 2px;
+        position: absolute;
+        top: calc(50% - 1px);
+        left: 0;
+    }
+}
+*/
+#loader {
+  width: 160px;
+  height: 160px;
   position: relative;
-  -webkit-transition: opacity .5s ease, height .5s ease;
-  transition: opacity .5s ease, height .5s ease;
-  height: 0;
   opacity: 0;
-  position: absolute;
-  width: 100%;
 }
 
-#loader #loader-percent {
-  font-family: 'InconsolataCondensed-Black', 'Lucida Console', Monaco, monospace;
-  color: #fff;
-  text-align: center;
-  width: 100%;
-  display: block;
+.circle,
+.background-circle {
+  border: 4px solid #fff;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
   position: absolute;
-  top: calc(50% - 20px);
 }
 
-#loader #loader-bar {
-  background: #fff;
-  height: 2px;
-  position: absolute;
-  top: calc(50% - 1px);
-  left: 0;
+.circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #000;
+  -webkit-animation-name: circle;
+          animation-name: circle;
+  -webkit-animation-duration: 4s;
+          animation-duration: 4s;
+  -webkit-animation-iteration-count: infinite;
+          animation-iteration-count: infinite;
+}
+
+.background-circle {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  top: 16px;
+  left: 16px;
+}
+
+@-webkit-keyframes circle {
+  0% {
+    background-color: black;
+  }
+  10% {
+    background-color: black;
+  }
+  20% {
+    background-color: white;
+  }
+  60% {
+    background-color: white;
+  }
+  70% {
+    background-color: black;
+  }
+  100% {
+    background-color: black;
+  }
+}
+
+@keyframes circle {
+  0% {
+    background-color: black;
+  }
+  10% {
+    background-color: black;
+  }
+  20% {
+    background-color: white;
+  }
+  60% {
+    background-color: white;
+  }
+  70% {
+    background-color: black;
+  }
+  100% {
+    background-color: black;
+  }
+}
+
+.circle00 {
+  left: 40px;
+  -webkit-animation-delay: 0s;
+          animation-delay: 0s;
+}
+
+.circle01 {
+  top: 40px;
+  -webkit-animation-delay: 1.5s;
+          animation-delay: 1.5s;
+}
+
+.circle02 {
+  left: 40px;
+  top: 80px;
+  -webkit-animation-delay: 1s;
+          animation-delay: 1s;
+}
+
+.circle03 {
+  top: 40px;
+  left: 80px;
+  -webkit-animation-delay: .5s;
+          animation-delay: .5s;
 }
 
 body.loading header .controls button {

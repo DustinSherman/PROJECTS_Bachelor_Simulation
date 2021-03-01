@@ -7,27 +7,37 @@ const simulation = require("./simulation.js");
 const fluid = require("./fluid.js");
 const caRules = require("./cellularautomatarules.js");
 const particle = require("./particle.js");
-
-let tmpFile = [];
+const particlerules = require("./particlerules.js");
 
 let record = [];
 exports.record = record;
 
+let particleReactionResults = [];
+
 let caCount = 0;
+let caSizeTotal = 0;
+let caRuleTotal = 0;
+let caNeighbourhoodTotal = 0;
 let caAnimateCount = 0;
+let caAnimateSizeTotal = 0;
 let caNeighbourhoodRulesCount = 0;
+let caNeighbourhoodRulesRuleTotal = 0;
+let caNeighbourhoodRulesNeighbourhoodTotal = 0;
 let caAnimateArray = [];
 
 let trailCount = 0;
 
 let fluidMoveCount = 0;
+let fluidMoveSizeTotal = 0;
+let fluidMoveVelocityTotal = 0;
 let fluidExplosionCount = 0;
+let fluidExplosionSizeTotal = 0;
+let fluidExplosionForceTotal = 0;
 let fluidFlowfieldCount = 0;
+let fluidFlowfieldSizeTotal = 0;
+let fluidFlowfieldDurationTotal = 0;
 
 let shockWaveCount = 0;
-
-let fluidParticleAverage = 0;
-let fluidParticleCount = 0;
 
 exports.caCount = caCount;
 exports.caAnimateCount = caAnimateCount;
@@ -43,8 +53,7 @@ function logBaseSettings() {
 
     // UNCOMMENT to log some info
     settingsString += "\r\n" + "Info";
-    settingsString += "\r\n" + "  The explosion triggeres by a reaction is now also determined by the particles in a close range, to make simulations more even."
-    settingsString += "\r\n" + "  Individual gravRadi for different states to boost perfomance."
+    settingsString += "\r\n" + "  Deleted multiple directions for fluidMovement.";
     settingsString += "\r\n" + " ";
 
     settingsString += "\r\n" + "General Settings / Data";
@@ -62,28 +71,86 @@ function logBaseSettings() {
 
     // General Particle Settings
     settingsString += "\r\n" + "Particle Data";
-    settingsString += "\r\n" + "  " + "VelocityMaxAbs " + particle.velocityMaxAbs;
+    settingsString += "\r\n" + "  " + "VelocityMaxAbs " + simulation.particleVelocityMaxAbs;
     settingsString += "\r\n" + "  " + "VelocityMax " + particle.velocityMax;
     settingsString += "\r\n" + "  " + "VelocityReduce " + particle.velocityReduce;
     settingsString += "\r\n";
-    settingsString += "\r\n" + "  " + "State | Mass | GravRadius | MergeCnt | ReactionCnt | ExpForce | ExpSize"
+    settingsString += "\r\n" + "  " + "State   | Mass | GravRadius | MergeCnt | ReactionCnt | ExpForce | ExpSize"
 
     for (let i = 1; i <= simulation.stateMax; i++) {
         settingsString += "\r\n" + "  ";
-        settingsString += i + "/-" + i + " ";
+        settingsString += subsequentSpaces(i + "/-" + i, 7);
         settingsString += " | ";
-        settingsString += simulation.particleVals[i - 1]['mass'];
-        settingsString += " | ";
-        settingsString += simulation.particleVals[i - 1]['gravRadius'];
-        settingsString += " | ";
-        settingsString += simulation.particleVals[i - 1]['mergeCount'] + "       ";
-        settingsString += " | ";
-        settingsString += simulation.particleVals[i - 1]['reactionCount'] + "          ";
-        settingsString += " | ";
-        settingsString += simulation.particleVals[i - 1]['explosionForce'] + "      ";
-        settingsString += " | ";
+        settingsString += subsequentSpaces(simulation.particleVals[i - 1]['mass'], 5);
+        settingsString += "| ";
+        settingsString += subsequentSpaces(simulation.particleVals[i - 1]['gravRadius'], 12);
+        settingsString += "| ";
+        settingsString += subsequentSpaces(simulation.particleVals[i - 1]['mergeCount'], 9);
+        settingsString += "| ";
+        settingsString += subsequentSpaces(simulation.particleVals[i - 1]['reactionCount'], 12);
+        settingsString += "| ";
+        settingsString += subsequentSpaces(simulation.particleVals[i - 1]['explosionForce'], 9);
+        settingsString += "| ";
         settingsString += simulation.particleVals[i - 1]['explosionSize'];
     }
+    settingsString += "\r\n";
+
+    // Particle Results
+    let particleResultsStrings = ["fm", "fe", "ff", "cas", "cac", "caa", "t"];
+    settingsString += "\r\n" + "  " + "Particle Results";
+    settingsString += "\r\n" + "  " + "Lowest Akin / State | 1   | -1  | 2   | -2  | 3   | -3  | 4   | -4  | 5   | -5  | 6   | -6  | 7   | -7  | 8   | -8  | 9   | -9  | 10  | -10 | 11  | -11";
+    for (let i = 0; i < simulation.stateMax - 1; i++) {
+
+        settingsString += "\r\n" + "  ";
+        settingsString += subsequentSpaces(i, 19);
+        settingsString += " |";
+        for (let l = 1; l < simulation.stateMax; l++) { 
+            for (let j = -1; j <= 1; j += 2) {           
+                let result = particlerules.getParticleReactionResult(l * j, i, 0);
+                let resultString = particleResultsStrings[result];
+                if (resultString == undefined) {
+                    resultString = " ";
+                }
+
+                settingsString += " " + subsequentSpaces(resultString, 4);
+                settingsString += "|";
+            }
+        }
+    }
+    settingsString += "\r\n";
+    settingsString += "\r\n";
+
+    // Fluid Movement
+    settingsString += "FluidMovement Values";
+    settingsString += "  " + "Velocity Base " + particle.fluidMovementVelocity[0] + " Increase " + particle.fluidMovementVelocity[1];
+    settingsString += "  " + "Size Base " + particle.fluidMovementSize[0] + " Increase " + particle.fluidMovementSize[1];
+    settingsString += "\r\n";
+
+    // FluidExplosion
+    settingsString += "FluidExplosion Values";
+    settingsString += "  " + "Strength Base " + particle.fluidExplosionStrength[0] + " Increase " + particle.fluidExplosionStrength[1];
+    settingsString += "  " + "Size Base " + particle.fluidExplosionSize[0] + " Increase " + particle.fluidExplosionSize[1];
+    settingsString += "\r\n";
+
+    // FluidFlowfield
+    settingsString += "Fluidflowfield Values";
+    settingsString += "  " + "Size Base " + particle.fluidflowfieldSize[0] + " Increase " + particle.fluidflowfieldSize[1];
+    settingsString += "  " + "Duration Base " + particle.fluidflowfieldDuration[0] + " Increase " + particle.fluidflowfieldDuration[1];
+    settingsString += "\r\n";
+
+    // Cellular Automata Neighbourhood Rule Set
+    settingsString += "CA Neighbourhood Rule Set Values";
+    settingsString += "  " + "Size Base " + particle.cANeighbourhoodRuleSize[0] + " Increase " + particle.cANeighbourhoodRuleSize[1];
+    settingsString += "\r\n";
+
+    // Cellular Automata Complete
+    settingsString += "CA Complete Values";
+    settingsString += "  " + "Size Base " + particle.cellularAutomataSize[0] + " Increase " + particle.cellularAutomataSize[1];
+    settingsString += "\r\n";
+
+    // Cellular Automata Animate
+    settingsString += "CA Animate Values";
+    settingsString += "  " + "Size Base " + particle.cAAnimateSize[0] + " Increase " + particle.cAAnimateSize[1];
     settingsString += "\r\n";
 
     // Fluid Data
@@ -105,7 +172,7 @@ function logBaseSettings() {
     settingsString += "\r\n" + "  " + "Resolution " + simulation.caResolution;
     
     settingsString += "\r\n" + "  " + "Set Variables";
-    settingsString += "\r\n" + "  " + "  FluidParticleRadius " + particle.fluidParticleRadius;
+    settingsString += "\r\n" + "  " + "  FluidParticleRadius " + particle.caRuleParticleRadius;
     settingsString += "\r\n";
     
     // Quadtree Settings
@@ -113,7 +180,7 @@ function logBaseSettings() {
     // settingsString += "\r\n" + "  " + "Fluid Particle Capacity " + simulation.fluidQuadtreeCapacity;
 
     // Timing Settings
-    let timingNames = ['ExpandPhase', 'ShrinkPhase'];
+    let timingNames = ['Normal Phase', 'ExpandPhase', 'EndPhase'];
     settingsString += "\r\n" + "Timing";
     settingsString += "\r\n" + "  ";
     for (let i = 0; i < simulation.timeSteps.length; i++) {
@@ -129,10 +196,18 @@ function logBaseSettings() {
 
     settingsString += "\r\n";
 
+    // Initialize particlereactionsArray
+    for (let i = 0; i < simulation.stateMax - 2; i++) {
+        particleReactionResults.push([]);
+        for (let j = 0; j < simulation.stateMax - 1; j++) {
+            particleReactionResults[i].push([0, 0]);
+        }
+    }
+
     record.push(settingsString);
     exports.record = record;
 
-    saveFile();
+    saveFile('_record_', record);
 }
 
 exports.logBaseSettings = logBaseSettings;
@@ -241,7 +316,7 @@ function saveParticles(_Freq) {
             }
         }
         */
-
+       
         // UNCOMMENT to log Cellular Automata Happenings
         // string += "\r\n        CA LiveDeath-Rule: " + caHappenings[0] + " Neighbourhood: " + caHappenings[1] + " CellsAlive: " + caHappenings[2];
 
@@ -249,34 +324,43 @@ function saveParticles(_Freq) {
         string += "\r\n        Particle Trail Count: " + trailCount;
 
         // UNCOMMENT to log Cellular Automatas Stuff
-        string += "\r\n        CA Count: " + caCount;
-        string += "\r\n        CA Animate Count: " + caAnimateCount;
-        string += "\r\n        CA Neighbourhood / Rule Count: " + caNeighbourhoodRulesCount;
+        string += "\r\n        CA Count: " + caCount + " Ø Size " + ((caSizeTotal/caCount).toFixed(2)) + " Ø Rule " + ((caRuleTotal/caCount).toFixed(2)) + " Ø Neighbourhood " + ((caNeighbourhoodTotal/caCount).toFixed(2));
+        string += "\r\n        CA Animate Count: " + caAnimateCount + " Ø Size " + ((caAnimateSizeTotal/caAnimateCount).toFixed(2));
+        string += "\r\n        CA Neighbourhood / Rule Count: " + caNeighbourhoodRulesCount + " Ø Rule " + ((caNeighbourhoodRulesRuleTotal/caNeighbourhoodRulesCount).toFixed(2)) + " Ø Neighbourhood " + ((caNeighbourhoodRulesNeighbourhoodTotal/caNeighbourhoodRulesCount).toFixed(2));
 
         // UNCOMMENT to log Fluid Stiff
-        string += "\r\n        FluidMove Count: " + fluidMoveCount;
-        string += "\r\n        FluidExplosion Count: " + fluidExplosionCount;
-        string += "\r\n        FluidFlowfield Count: " + fluidFlowfieldCount;
+        string += "\r\n        FluidMove Count: " + fluidMoveCount + " Ø Size " + ((fluidMoveSizeTotal/fluidMoveCount).toFixed(2)) + " Ø Velocity " + ((fluidMoveVelocityTotal/fluidMoveCount).toFixed(2));
+        string += "\r\n        FluidExplosion Count: " + fluidExplosionCount + " Ø Size " + ((fluidExplosionSizeTotal/fluidExplosionCount).toFixed(2)) + " Ø Force " + ((fluidExplosionForceTotal/fluidExplosionCount).toFixed(2));
+        string += "\r\n        FluidFlowfield Count: " + fluidFlowfieldCount + " Ø Size " + ((fluidFlowfieldSizeTotal/fluidExplosionCount).toFixed(2)) + " Ø Duration " + ((fluidFlowfieldDurationTotal/fluidExplosionCount).toFixed(2));
 
+        // UNCOMMENT to log all Reaction Results
+        string += "\r\n        Particle Reaction Results";
+        string += "\r\n        LowestAkin/state |   1 |  -1 |   2 |  -2 |   3 |  -3 |   4 |  -4 |   5 |  -5 |   6 |  -6 |   7 |  -7 |   8 |  -8 |   9 |  -9 |  10 | -10 |  11 | -11 |";
+        for (let i = 0; i < particleReactionResults.length; i++) {
+            string += "\r\n        " + i + "                |";
+            for (let j = 0; j < particleReactionResults[i].length; j++) {
+                string += " " + spacePad(particleReactionResults[i][j][0], 3) + " | " + spacePad(particleReactionResults[i][j][1], 3) + " |";
+            }
+        }
 
-        string += "\r\n        Shockwave Count: " + shockWaveCount;
+        // string += "\r\n        Shockwave Count: " + shockWaveCount;
 
         record.push(string);
         exports.record = record;
 
         logFPS();
 
-        saveFile();
+        saveFile('_record_', record);
     }
 }
 
 exports.saveParticles = saveParticles;
 
-function saveFile() {
+function saveFile(fileName, data) {
     let saveDestination = 'public/data/' + '/';
     let dateString = (simulation.startDate.getFullYear() % 100) + pad((simulation.startDate.getMonth() + 1), 2) + pad(simulation.startDate.getDate(), 2) + pad(simulation.startDate.getHours(), 2) + pad(simulation.startDate.getMinutes(), 2);
 
-    fs.writeFileSync(saveDestination + dateString + '_record_' + simulation.startHexString + '.txt', record);
+    fs.writeFileSync(saveDestination + dateString + fileName + simulation.startHexString + '.txt', data);
 }
 
 exports.saveFile = saveFile;
@@ -290,20 +374,20 @@ function logFPS() {
     record.push(string);
     exports.record = record;
 
-    saveFile();
+    saveFile('_record_', record);
 }
 
 exports.logFPS = logFPS;
 
 function logNewPhase(phase) {
-    let phaseNames = ["Expand Phase", "Shrink Phase"];
+    let phaseNames = ["Start Phase", "ExpandPhase", "EndPhase"];
 
     let string = "\r\n" + pad(simulation.timePassed, 6) + "  New Phase " + phaseNames[phase - 1];
 
     record.push(string);
     exports.record = record;
 
-    saveFile();
+    saveFile('_record_', record);
 }
 
 exports.logNewPhase = logNewPhase;
@@ -313,12 +397,12 @@ function logBinary(binaryResult) {
 
     record.push(string);
 
-    saveFile();
+    saveFile('_record_', record);
 }
 
 exports.logBinary = logBinary;
 
-function logReaction(particle, center) {
+function logReaction(particle, center, lowestAkin) {
     let self = particle;
 
     let string = "\r\n" + pad(simulation.timePassed, 6) + "  Reaction [" + center[0].toFixed(2) + ", " + center[1].toFixed(2) + "]";
@@ -337,7 +421,7 @@ function logReaction(particle, center) {
 
     record.push(string);
 
-    saveFile();
+    saveFile('_record_', record);
 }
 
 exports.logReaction = logReaction;
@@ -358,17 +442,25 @@ function logReactionResult(particle) {
     // UNCOMMENT to log the result of a reaction
     // record.push(string);
 
-    saveFile();
+    saveFile('_record_', record);
 }
 
 exports.logReactionResult = logReactionResult;
+
+function saveReactionResults(state, lowestAkin) {
+    let stateIndex = state > 0 ? 0 : 1;
+
+    particleReactionResults[lowestAkin][Math.abs(state) - 1][stateIndex]++;
+}
+
+exports.saveReactionResults = saveReactionResults;
 
 function logReactionLowestAkin(lowestAkin) {
     let string = " (LowestAkin " + lowestAkin + ")";
 
     record.push(string);
 
-    saveFile();
+    saveFile('_record_', record);
 }
 
 exports.logReactionLowestAkin = logReactionLowestAkin;
@@ -382,7 +474,7 @@ function logExplosion(size, force, count, threshold) {
 
     record.push(string);
 
-    saveFile();
+    saveFile('_record_', record);
 }
 
 exports.logExplosion = logExplosion;
@@ -402,7 +494,7 @@ function logMerge(particle) {
 
     record.push(string);
 
-    saveFile();
+    saveFile('_record_', record);
 }
 
 exports.logMerge = logMerge;
@@ -417,10 +509,13 @@ function logCA(center, size, rule, neighbourhood, form) {
     }
 
     caCount++;
+    caSizeTotal += size;
+    caRuleTotal += rule;
+    caNeighbourhoodTotal += neighbourhood;
 
     record.push(string);
 
-    saveFile();
+    saveFile('_record_', record);
 }
 
 exports.logCA = logCA;
@@ -438,10 +533,12 @@ function logCANeighbourhoodRule(center, size, neighbourIndex, ruleIndex, form) {
     string += "Pos " + center + " size " + size + " Neighbours " + caRules.neighbours[neighbourIndex] + " Rule " + caRules.rules[ruleIndex];
 
     caNeighbourhoodRulesCount++;
+    caNeighbourhoodRulesRuleTotal += ruleIndex;
+    caNeighbourhoodRulesNeighbourhoodTotal += neighbourIndex;
 
     record.push(string);
 
-    saveFile();
+    saveFile('_record_', record);
 }
 
 exports.logCANeighbourhoodRule = logCANeighbourhoodRule;
@@ -482,8 +579,9 @@ function logCellularAutomataAnimate(center, size, form) {
     record.push(string);
 
     caAnimateCount++;
+    caAnimateSizeTotal += size;
 
-    saveFile();    
+    saveFile('_record_', record);    
 }
 
 exports.logCellularAutomataAnimate = logCellularAutomataAnimate;
@@ -497,19 +595,21 @@ function logTrails(pos) {
 
     trailCount++;
 
-    saveFile(); 
+    saveFile('_record_', record); 
 }
 
 exports.logTrails = logTrails;
 
-function logFluidVelocity(size, force, dirCount) {
-    let string = "\r\n" + "        " + "FluidVeloity Size " + size + " Force " + force + " DirectionCount " + dirCount;
+function logFluidVelocity(size, velocityMag, velocityVector) {
+    let string = "\r\n" + "        " + "FluidVeloity Size " + size + " Velocity " + velocityMag + " Vector " + velocityVector;
 
     fluidMoveCount++;
+    fluidMoveSizeTotal += size;
+    fluidMoveVelocityTotal += velocityMag;
 
     record.push(string);
 
-    saveFile();
+    saveFile('_record_', record);
 }
 
 exports.logFluidVelocity = logFluidVelocity;
@@ -518,10 +618,12 @@ function logFluidExplosion(size, force) {
     let string = "\r\n" + "        " + "FluidExplosion Size " + size + " Force " + force;
 
     fluidExplosionCount++;
+    fluidExplosionSizeTotal += size;
+    fluidExplosionForceTotal += force;
 
     record.push(string);
 
-    saveFile();
+    saveFile('_record_', record);
 }
 
 exports.logFluidExplosion = logFluidExplosion;
@@ -541,16 +643,67 @@ function logFluidFlowfield(size, duration, form) {
     let string = "\r\n" + "        " + "FluidFlowfield " + type + " " + shape + " Size " + size + " Duration " + duration;
 
     fluidFlowfieldCount++;
+    fluidFlowfieldSizeTotal += size;
+    fluidFlowfieldDurationTotal += duration;
 
     record.push(string);
 
-    saveFile();
+    saveFile('_record_', record);
 }
 
 exports.logFluidFlowfield = logFluidFlowfield;
+
+// Save all reactions to a file
+function saveReactionFile() {
+    let allReactionsCount = 0;
+
+    for (let i = 0; i < particleReactionResults.length; i++) {
+        for (let j = 0; j < particleReactionResults[i].length; j++) {
+            allReactionsCount += particleReactionResults[i][j][0];
+            allReactionsCount += particleReactionResults[i][j][1];
+        }
+    }
+
+    let string = "Particle Reaction Results";
+    string += "\r\nLowestAkin/state |     1 |    -1 |     2 |    -2 |     3 |    -3 |     4 |    -4 |     5 |    -5 |     6 |    -6 |     7 |    -7 |     8 |    -8 |     9 |    -9 |    10 |   -10 |    11 |   -11 |";
+    for (let i = 0; i < particleReactionResults.length; i++) {
+        string += "\r\n" + i + "                |";
+        for (let j = 0; j < particleReactionResults[i].length; j++) {
+            string += " " + spacePad(((particleReactionResults[i][j][0]/allReactionsCount) * 100).toFixed(1) + '%', 5) + " | " + spacePad(((particleReactionResults[i][j][1]/allReactionsCount) * 100).toFixed(1) + '%', 5) + " |";
+        }
+    }
+
+    string += "\r\nParticle Reaction Results";
+    string += "\r\nLowestAkin/state |   1 |  -1 |   2 |  -2 |   3 |  -3 |   4 |  -4 |   5 |  -5 |   6 |  -6 |   7 |  -7 |   8 |  -8 |   9 |  -9 |  10 | -10 |  11 | -11 |";
+    for (let i = 0; i < particleReactionResults.length; i++) {
+        string += "\r\n" + i + "                |";
+        for (let j = 0; j < particleReactionResults[i].length; j++) {
+            string += " " + spacePad(particleReactionResults[i][j][0], 3) + " | " + spacePad(particleReactionResults[i][j][1], 3) + " |";
+        }
+    }
+
+    string += "\r\n";   
+    string += "\r\nTotal Reactions " + allReactionsCount;
+
+    saveFile('_reactionStatistics_', string);
+}
+
+exports.saveReactionFile = saveReactionFile;
 
 // Add leading zeros
 function pad(num, size) {
     var s = "000000000" + num;
     return s.substr(s.length - size);
+}
+
+// Add leading spaces
+function spacePad(num, size) {
+    var s = "                                        " + num;
+    return s.substr(s.length - size);
+}
+
+// Add subsequent spaces
+function subsequentSpaces(num, size) {
+    var s = num + "                                        ";
+    return s.substr(0, size);
 }

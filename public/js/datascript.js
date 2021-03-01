@@ -1,27 +1,27 @@
 // Data Objects
-let particles = [];
-let fluid = [];
-let fluidCells = [];
-let cellularAutomataData = [];
-let particleTrails = [];
-let shockwaves = [];
+let particles = [[], []];
+let fluid = [[], []];
+let fluidCells = [[], []];
+let cellularAutomataData = [[], []];
+// let particleTrails = [];
+// let shockwaves = [];
 
 let dataObjects = [
     particles,
     fluid,
-    fluidCells,
-    cellularAutomataData,
-    particleTrails,
-    shockwaves
+    // fluidCells,
+    // cellularAutomataData,
+    // particleTrails,
+    // shockwaves
 ]
 
 let dataNames = [
     'particles',
     'fluid',
-    'fluidCells',
-    'cellularAutomata',
-    'trails',
-    'shockwaves'
+    // 'fluidCells',
+    // 'cellularAutomata',
+    // 'trails',
+    // 'shockwaves'
 ]
 
 let fluidParticleCount;
@@ -37,10 +37,7 @@ let tmpPath = 'undefined';
 let startIDHex = '';
 let startDate;
 
-let loaderElement = document.getElementById('loader');
-let loaderVal = 0;
-let loaderbarElement = document.getElementById('loader-bar');
-let loaderpercentElement = document.getElementById('loader-percent');
+let currentFileIndex = -1;
 
 function dataInit() {
     // Get Setup Data
@@ -58,50 +55,59 @@ function dataInit() {
 
             // Iterate through all files
             for (let i = 0; i < dataObjects.length; i++) {
-                loadFile(0, dataObjects[i], dataNames[i]);
+                loadFile(0, dataObjects[i], dataNames[i], undefined);
+                loadFile(1, dataObjects[i], dataNames[i], checkForInit);
             }
+            
+            console.log("Data Setup finished");
         })
 }
 
-function loadFile(index, dataObject, fileName) {
-    let tmpData = new Array();
-    tmpData = dataObject;
+function loadData(timePassed) {
+    // Check if fileIndex has updated
+    currentFileIndex = Math.floor(timePassed/saveFreq) + 1;
+
+
+    console.log("Load new data at ", timePassed);
+
+
+    for (let i = 0; i < dataObjects.length; i++) {
+        loadFile(currentFileIndex, dataObjects[i], dataNames[i], undefined);
+    }
+}
+
+function loadFile(index, dataObject, fileName, callback) {
+    let relativeIndex = index % 2;
+    // Reset Array
+    dataObject[relativeIndex] = [];
 
         fetch('../data/' + tmpPath + '/' + pad(index, 6) + '_' + fileName + '.json')
         .then(response => response.json())
         .then(function(data) {
             for (let i = 0; i < saveFreq; i++) {
-                tmpData.push(data[i]);
+                dataObject[relativeIndex].push(data[i]);
+            }
+
+            if (callback != undefined) {
+                callback();
             }
         })
-        .then(function() {
-            // console.log("Loading", fileName, index, (index / (timeEnd / saveFreq)) * 100);
+}
 
-            loaderVal += ((saveFreq/timeEnd)/dataObjects.length) * 100;
-            loaderbarElement.style.width = loaderVal + '%';
-            loaderpercentElement.innerHTML = loaderVal.toFixed(1) + ' %';
-
-            if (index + 1 < timeEnd / saveFreq) {
-                loadFile(index + 1, dataObject, fileName);
-            } else {
-                // console.log("Finished", fileName, timeEnd);
-
-                // Check if all data is gathered
-                let finished = true;
-                for (let i = 0; i < dataObjects.length; i++) {
-                    if (dataObjects[i].length != timeEnd) {
-                        finished = false;
-                        break;
-                    }
-                }
-
-                if (finished) {
-                    document.body.classList.remove('loading');
-
-                    init();
-                }
+function checkForInit() {
+    let finished = true;
+    for (let i = 0; i < dataObjects.length; i++) {
+        for (let j = 0; j < dataObjects[i].length; j++) {
+            if (dataObjects[i][j].length != saveFreq) {
+                finished = false;
+                break;
             }
-        })
+        }
+    }
+
+    if (finished) {
+        init();
+    }
 }
 
 dataInit();

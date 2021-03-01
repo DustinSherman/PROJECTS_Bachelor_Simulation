@@ -19,6 +19,7 @@ exports.particles = particles;
 
 let minVelocity = .05;
 let maxVelocity = 8;
+exports.maxVelocity = maxVelocity;
 
 // The speed get multiplied by this value to slow it down
 let particleSpeedReduction;
@@ -30,14 +31,17 @@ let fluidCellsPrev = [];
 let fluidCellData = [];
 let fluidCellResolution;
 let fluidCellRadius;
+let fluidCellBaseParticleCount;
 
 exports.fluidCellData = fluidCellData;
+exports.fluidCellBaseParticleCount = fluidCellBaseParticleCount;
 
 // Flow Cells
 let flowCells = [];
-let flowCellSize = 4;
+let flowCellSize = simulation.fluidResolution;
 let flowfieldStrength = 2;
 exports.flowCells = flowCells;
+exports.flowCellSize = flowCellSize;
 exports.flowfieldStrength = flowfieldStrength;
 
 // ////////////////////////////// SETUP
@@ -120,6 +124,9 @@ function initFluidCells() {
         let pos = [(simulation.fieldWidth/fluidCellResolution) * fluidCellResolution + fluidCellResolution/2, Math.floor(simulation.fieldWidth/fluidCellResolution) * fluidCellResolution + fluidCellResolution/2];
         let particleBaseCount = simulation.fluidTree.contentParticles(pos, fluidCellRadius, 0).length;
 
+        fluidCellBaseParticleCount = particleBaseCount;
+        exports.fluidCellBaseParticleCount = fluidCellBaseParticleCount;
+
         for (i = 0; i < fluidCellCount; i++) {
             fluidCells.push([particleBaseCount, 0]);
             fluidCellsPrev.push([particleBaseCount, 0]);
@@ -133,11 +140,7 @@ exports.initFluidCells = initFluidCells;
 
 // ////////////////////////////// CLASSES
 
-
-
-
-
-
+/*
 class fluidparticle {
     constructor(index, pos) {
         this.pos = [pos[0], pos[1]];
@@ -214,14 +217,7 @@ class fluidparticle {
 		this.acceleration = [this.acceleration[0] + acceleration[0], this.acceleration[1] + acceleration[1]];
 	}
 }
-
-
-
-
-
-
-
-
+*/
 
 function particle(index, x, y) {
     this.index = index;
@@ -235,8 +231,6 @@ function particle(index, x, y) {
     this.acceleration = [0, 0];
 
     this.unchanged = true;
-
-
 }
 
 function cell(index, x, y, res) {
@@ -254,6 +248,47 @@ function cell(index, x, y, res) {
 
     this.pressure = 0;
 }
+
+/*
+class flowCell {
+	constructor(pos, size, duration, dir) {
+		this.pos = [pos[0], pos[1]];
+		this.size = size;
+		this.duration = duration;
+		this.dir = dir;
+	}
+
+	updateFluidParticles() {
+		let tmpFluidParticles = [];
+		let self = this;
+
+		tmpFluidParticles = simulation.fluidTree.contentParticles(this.pos, this.size, 1);
+
+		tmpFluidParticles.forEach(function(fluidParticle) {
+			addAcceleration(fluidParticle, self.dir);
+		})
+
+        if (this.duration != undefined) {
+            this.duration--;
+        }
+	}
+
+    updateParticles() {
+		let tmpFluidParticles = [];
+		let self = this;
+
+		tmpFluidParticles = simulation.fluidTree.contentParticles(this.pos, this.size, 1);
+
+		tmpFluidParticles.forEach(function(fluidParticle) {
+			addAcceleration(fluidParticle, self.dir);
+		})
+
+        if (this.duration != undefined) {
+            this.duration--;
+        }
+    }
+}
+*/
 
 // ////////////////////////////// LOOP
 
@@ -289,7 +324,10 @@ function draw() {
 
         for (let i = 0; i < fluidCells.length; i++) {
             if (fluidCellsPrev[i][0] != fluidCells[i][0] || fluidCellsPrev[i][1] != fluidCells[i][1]) {
-                fluidCellData.push([i, fluidCells[i][0], fluidCells[i][1]]);
+                // let index = i.toString(16);
+                let index = i;
+
+                fluidCellData.push(index, fluidCells[i][0], fluidCells[i][1]);
 
                 // Set previous FluidCellData
                 fluidCellsPrev[i] = [fluidCells[i][0], fluidCells[i][1]];
@@ -328,9 +366,11 @@ function updateParticle() {
         p.velocity[1] += ay * cellData.down.yv * 0.05;
 
         // Add acceleration to velocity
+        /*
         p.velocity[0] += p.acceleration[0];
         p.velocity[1] += p.acceleration[1];
 
+        */
         // If particle gets to slow stop it or to fast slow it down
         if (geometric.mag(p.velocity) < minVelocity) {
             p.velocity[0] = 0;
@@ -338,28 +378,36 @@ function updateParticle() {
         } else if (geometric.mag(p.velocity) > maxVelocity) {
             p.velocity[0] = geometric.setMag([p.velocity[0], p.velocity[1]], maxVelocity)[0];
             p.velocity[1] = geometric.setMag([p.velocity[0], p.velocity[1]], maxVelocity)[1];
+            
         }
 
-        // Sign out off of fluid Cells
-        if (p.velocity[0] != 0 || p.velocity[1] != 0) {
-            signFluidCells(p.pos, -1);
+        if (simulation.phase < simulation.timeSteps.length - 1) {
+            // Sign out off of fluid Cells
+            if (p.velocity[0] != 0 || p.velocity[1] != 0) {
+                signFluidCells(p.pos, -1);
 
-            signedOut = true;
+                signedOut = true;
+            }
         }
 
         // Actualize position
         p.pos = [getTorus(p.pos[0] + p.velocity[0]), getTorus(p.pos[1] + p.velocity[1])];
         
-        // Sign in to fluid Cells
-        if (signedOut) {
-            signFluidCells(p.pos, 1);
+        if (simulation.phase < simulation.timeSteps.length - 1) {
+            // Sign in to fluid Cells
+            if (signedOut) {
+                signFluidCells(p.pos, 1);
+            }
         }
         
+        /*
         p.acceleration = [0, 0];
+        */
 
         // Slow particle down
         p.velocity[0] *= particleSpeedReduction;
         p.velocity[1] *= particleSpeedReduction;
+        
 
         if (p.velocity[0] == 0 && p.velocity[1] == 0) {
             p.unchanged = true;
@@ -447,10 +495,12 @@ function updateVelocity(cellData) {
     cellData.yv *= 0.99;
 
     // Stop velocity when it gets too slow
+    /*
     if (geometric.mag([cellData.xv, cellData.yv]) < minVelocity) {
         cellData.xv = 0;
         cellData.yv = 0;
     }
+    */
 }
 
 function addAcceleration(particle, acceleration) {
@@ -510,28 +560,6 @@ function getFluidCellTorus(cellPos) {
 }
 
 exports.getFluidCellTorus = getFluidCellTorus;
-
-class flowCell {
-	constructor(pos, size, duration, dir) {
-		this.pos = [pos[0], pos[1]];
-		this.size = size;
-		this.duration = duration;
-		this.dir = dir;
-	}
-
-	update() {
-		let tmpFluidParticles = [];
-		let self = this;
-
-		tmpFluidParticles = simulation.fluidTree.contentParticles(this.pos, this.size, 1);
-
-		tmpFluidParticles.forEach(function(fluidParticle) {
-			addAcceleration(fluidParticle, self.dir);
-		})
-
-		this.duration--;
-	}
-}
 
 let rotateStrength = .4;
 
@@ -605,3 +633,9 @@ function setFluidflowfieldHourglass(pos, cellCount, rotate, form, duration) {
 }
 
 exports.setFluidflowfieldHourglass = setFluidflowfieldHourglass;
+
+function reduceFluidParticleMaxVelocity(reduceVal) {
+    maxVelocity -= reduceVal;
+}
+
+exports.reduceFluidParticleMaxVelocity = reduceFluidParticleMaxVelocity;
