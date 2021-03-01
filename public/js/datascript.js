@@ -106,6 +106,8 @@ function checkForInit() {
     }
 
     if (finished) {
+        console.log("Loading files finished. Starting Init");
+
         init();
     }
 }
