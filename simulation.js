@@ -229,6 +229,7 @@ function saveSetupData() {
 		'saveFreq': data.saveFreq,
 		'fluidParticleCount': fluid.particleCount,
 		'fluidCellResolution': fluidCellResolution,
+		'fluidCellBaseParticleCount' : fluid.fluidCellBaseParticleCount,
 		'caResolution': caResolution
 	}
 

@@ -9,7 +9,7 @@ let cellularAutomataData = [[], []];
 let dataObjects = [
     particles,
     fluid,
-    // fluidCells,
+    fluidCells,
     // cellularAutomataData,
     // particleTrails,
     // shockwaves
@@ -18,7 +18,7 @@ let dataObjects = [
 let dataNames = [
     'particles',
     'fluid',
-    // 'fluidCells',
+    'fluidCells',
     // 'cellularAutomata',
     // 'trails',
     // 'shockwaves'
@@ -51,6 +51,7 @@ function dataInit() {
             saveFreq = data['saveFreq'];
             fluidParticleCount = data['fluidParticleCount'];
             fluidCellResolution = data['fluidCellResolution'];
+            fluidCellBaseParticleCount = data['fluidCellBaseParticleCount'];
             cellularAutomataResolution = data['caResolution'];
 
             // Iterate through all files

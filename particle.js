@@ -28,8 +28,8 @@ let lowestAkin;
 // ParticleResult Values
 // The first values is the startingvalue and the second value is the increasing value
 let multiRange = [1, 7]
-let fluidMovementVelocity = [6, 1];
-let fluidMovementSize = [10, 2];
+let fluidMovementVelocity = [6, 2];
+let fluidMovementSize = [10, 3];
 let fluidExplosionSize = [32, 8];
 let fluidExplosionStrength = [8, 3];
 let fluidflowfieldSize = [64, 8];
@@ -405,7 +405,7 @@ class Particle {
 
 			Multi is the multiplicator which determines strength or other values of the result. Multi is determined by the state of the reaction and then subtracted by
 			lowestAkin. If more particles react then the reactionCount the differnce is added to multi, which can also result in an value thats out of range. The lowest possible+
-			multi value is .2.
+			multi value is .1.
 			All values range as followed:
 
 			Multi 0-7;
@@ -416,17 +416,21 @@ class Particle {
 			CA Complete size 24-64
 			CA Animate size 8-16
 		*/
+
 		if (reactionResult != undefined) {
-			let multiArray = [.2, .2, 3, 4, 5, 6, 7, 6, 4, 2, 0];
-			let multi = multiArray[Math.abs(this.state)];
+			let multiArray = [.2, .4, 2, 3, 4, 5, 6, 7, 6, 4, 2, 0];
+			let multi = multiArray[Math.abs(this.state) - 1];
 			
-			multi -= lowestAkin;
-			multi += (this.tmpCalcParticles.length - this.reactionCount);
-			multi = Math.max(multi, .2);
+			if (Math.abs(this.state) > 2) {
+				multi -= lowestAkin;
+				multi += (this.tmpCalcParticles.length - this.reactionCount);
+			}
+
+			multi = Math.max(multi, .1);
 
 			if (reactionResult == 0) {
-				let velocity = (fluidMovementVelocity[0] * Math.min(mulit, 1)) + multi * fluidMovementVelocity[1];
-				let size = (fluidMovementVelocity[0] * Math.min(mulit, 1)) + multi * fluidMovementSize[1];
+				let velocity = (fluidMovementVelocity[0] * Math.min(multi, 1)) + multi * fluidMovementVelocity[1];
+				let size = (fluidMovementVelocity[0] * Math.min(multi, 1)) + multi * fluidMovementSize[1];
 
 				this.setFluidMovement(center, velocity, size, tmpVelocity, Math.ceil((binaryResult + 1)/4));
 			} else if (reactionResult == 1) {

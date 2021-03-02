@@ -26,6 +26,7 @@ let particleSpeedReduction;
 // Fluid Cells
 let fluidCells = [];
 let fluidCellsPrevPolarity = [];
+let fluidCellsPrev = [];
 let fluidCellData = [];
 let fluidCellResolution;
 let fluidCellRadius;
@@ -112,11 +113,14 @@ function initFluidCells() {
         let fluidCellCount = rowCount * rowCount;
 
         let pos = [(simulation.fieldWidth/fluidCellResolution) * fluidCellResolution + fluidCellResolution/2, Math.floor(simulation.fieldWidth/fluidCellResolution) * fluidCellResolution + fluidCellResolution/2];
-        let particleBaseCount = simulation.fluidTree.contentParticles(pos, fluidCellRadius).length;
+        let particleBaseCount = simulation.fluidTree.contentParticles(pos, fluidCellRadius, 0).length;
+
+        fluidCellBaseParticleCount = particleBaseCount;
+        exports.fluidCellBaseParticleCount = fluidCellBaseParticleCount;
 
         for (i = 0; i < fluidCellCount; i++) {
             fluidCells.push([particleBaseCount, 0]);
-            fluidCellsPrevPolarity.push(0);
+            fluidCellsPrev.push([particleBaseCount, 0]);
         }
     }
 
@@ -158,15 +162,15 @@ function draw() {
         fluidCellData = [];
 
         for (let i = 0; i < fluidCells.length; i++) {
-            let pos = [i % (simulation.fieldWidth/fluidCellResolution) * fluidCellResolution + fluidCellResolution/2, Math.floor(i / (simulation.fieldWidth/fluidCellResolution)) * fluidCellResolution + fluidCellResolution/2];
+            if (fluidCellsPrev[i][0] != fluidCells[i][0] || fluidCellsPrev[i][1] != fluidCells[i][1]) {
+                // let index = i.toString(16);
+                let index = i;
 
-            let fluidParticleCount = simulation.fluidTree.contentParticles(pos, fluidCellRadius).length;
+                fluidCellData.push(index, fluidCells[i][0], fluidCells[i][1]);
 
-            if (fluidParticleCount != fluidCells[i][0] || fluidCellsPrevPolarity[i] != fluidCells[i][1]) {
-                fluidCellData.push([i, fluidParticleCount, fluidCells[i][1]]);
+                // Set previous FluidCellData
+                fluidCellsPrev[i] = [fluidCells[i][0], fluidCells[i][1]];
             }
-
-            fluidCells[i][0] = fluidParticleCount;
         }
 
         exports.fluidCellData = fluidCellData;
@@ -183,6 +187,23 @@ function updateParticle() {
 
         var p = particles[i];
 
+        var col = parseInt(p.pos[0] / resolution);
+        var row = parseInt(p.pos[1] / resolution);
+
+        var cellData = vectorCells[col][row];
+        
+        var ax = (p.pos[0] % resolution) / resolution;
+        var ay = (p.pos[1] % resolution) / resolution;
+        
+        p.xv += (1 - ax) * cellData.xv * 0.05;
+        p.yv += (1 - ay) * cellData.yv * 0.05;
+        
+        p.xv += ax * cellData.right.xv * 0.05;
+        p.yv += ax * cellData.right.yv * 0.05;
+        
+        p.xv += ay * cellData.down.xv * 0.05;
+        p.yv += ay * cellData.down.yv * 0.05;
+
         // If particle gets to slow stop it
         if (geometric.mag([p.xv, p.yv] < minVelocity)) {
             p.xv = 0;
@@ -192,42 +213,30 @@ function updateParticle() {
             p.xv = geometric.setMag([p.xv, p.yv], maxVelocity)[1];
         }
 
-        if (p.pos[0] >= 0 && p.pos[0] < fieldWidth && p.pos[1] >= 0 && p.pos[1] < fieldWidth) {
-            var col = parseInt(p.pos[0] / resolution);
-            var row = parseInt(p.pos[1] / resolution);
+        if (simulation.phase < simulation.timeSteps.length - 1) {
+            // Sign out off of fluid Cells
+            if (p.xv != 0 || p.yv != 0) {
+                signFluidCells(p.pos, -1);
 
-            var cellData = vectorCells[col][row];
-            
-            var ax = (p.pos[0] % resolution) / resolution;
-            var ay = (p.pos[1] % resolution) / resolution;
-            
-            p.xv += (1 - ax) * cellData.xv * 0.05;
-            p.yv += (1 - ay) * cellData.yv * 0.05;
-            
-            p.xv += ax * cellData.right.xv * 0.05;
-            p.yv += ax * cellData.right.yv * 0.05;
-            
-            p.xv += ay * cellData.down.xv * 0.05;
-            p.yv += ay * cellData.down.yv * 0.05;
-
-            p.pos[0] += p.xv;
-            p.pos[1] += p.yv;
-            
-            p.px = p.x;
-            p.py = p.y;
-        } else {
-            if (p.pos[0] < 0) {
-                p.pos[0] += fieldWidth;
-            } else if (p.pos[0] >= fieldWidth) {
-                p.pos[0] -= fieldWidth;
-            }
-
-            if (p.pos[1] < 0) {
-                p.pos[1] += fieldWidth;
-            } else if (p.pos[1] >= fieldWidth) {
-                p.pos[1] -= fieldWidth;
+                signedOut = true;
             }
         }
+
+        p.pos[0] += p.xv;
+        p.pos[1] += p.yv;
+        
+        p.pos[0] = getTorus(p.pos[0]);
+        p.pos[1] = getTorus(p.pos[1]);
+
+        if (simulation.phase < simulation.timeSteps.length - 1) {
+            // Sign in to fluid Cells
+            if (signedOut) {
+                signFluidCells(p.pos, 1);
+            }
+        }
+
+        p.px = p.x;
+        p.py = p.y;
         
         // Slow particle down
         p.xv *= particleSpeedReduction;
@@ -325,6 +334,8 @@ function updateVelocity(cellData) {
     }
 }
 
+// ////////////////////////////// CLASSES
+
 function cell(index, x, y, res) {
     this.index = index;
     this.x = x;
@@ -354,18 +365,43 @@ function particle(index, x, y) {
     this.unchanged = true;
 }
 
-function addAcceleration(particle, acceleration) {
-    particle.xv += acceleration[0]
-    particle.yv += acceleration[1];
-}
+// ////////////////////////////// FUNCTIONS
 
-exports.addAcceleration = addAcceleration;
+function signFluidCells(pos, val) {
+    let radius = Math.ceil(fluidCellRadius/fluidCellResolution);
+    let translatedPos = [Math.floor(pos[0]/fluidCellResolution), Math.floor(pos[1]/fluidCellResolution)];
+
+    for (let i = translatedPos[0] - radius; i <= translatedPos[0] + radius; i++) {
+        for (let j = translatedPos[1] - radius; j <= translatedPos[1] + radius; j++) {
+            let cellPos = [i * fluidCellResolution + fluidCellResolution/2, j * fluidCellResolution + fluidCellResolution/2];
+
+            if (geometric.dist(pos, cellPos) <= fluidCellRadius) {
+                let rowCount = (fieldWidth/fluidCellResolution);
+                let cellIndex = getFluidCellTorus(j) * rowCount + getFluidCellTorus(i);
+                
+                fluidCells[cellIndex][0] += val;
+            }
+        }
+    }
+}
 
 function changeFluidCellPolarity(index, val) {
     fluidCells[index][1] += val;
 }
 
 exports.changeFluidCellPolarity = changeFluidCellPolarity;
+
+function getTorus(pos) {
+    while (pos >= fieldWidth) {
+        pos -= fieldWidth;
+    }
+
+    while (pos < 0) {
+        pos += fieldWidth;
+    }
+
+    return pos;
+}
 
 function getFluidCellTorus(cellPos) {
     let fluidCellCount = simulation.fieldWidth/fluidCellResolution;
@@ -377,4 +413,5 @@ function getFluidCellTorus(cellPos) {
     }
     return cellPos;
 }
+
 exports.getFluidCellTorus = getFluidCellTorus;

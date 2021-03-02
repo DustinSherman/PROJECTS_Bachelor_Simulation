@@ -44,6 +44,7 @@ let alphaDistance;
 
 // FluidCells
 let fluidCellResolution;
+let fluidCellBaseParticleCount;
 let fluidColorLength = 128;
 let fluidColorPolarityLength = 16;
 let fluidCellFilter = new PIXI.filters.BlurFilter();
@@ -134,7 +135,7 @@ function draw() {
 
     relativeIndex = Math.floor(timePassed/saveFreq) % 2;
 
-    // drawFluidCells();
+    drawFluidCells();
     drawParticles();
     drawFluid();
     // drawCellularAutomata();
@@ -203,6 +204,8 @@ function initFluid() {
     let rowCount = (fieldWidth/fluidCellResolution);
     let fluidCellCount = rowCount * rowCount;
 
+    console.log("Init", fluidCellCount, "FluidCells");
+
     for (let i = 0; i < fluidCellCount; i++) {
         fluidCellSprites[i] = new Sprite(
             resources['../assets/fluidcell.png'].texture
@@ -214,7 +217,7 @@ function initFluid() {
         fluidCellSprites[i].width = fluidCellResolution;
         fluidCellSprites[i].height = fluidCellResolution;
 
-        let color = fluidCellColors[fluidColorPolarityLength][21];
+        let color = fluidCellColors[fluidColorPolarityLength][fluidCellBaseParticleCount];
 
         fluidCellSprites[i].tint = color;
     }
@@ -285,14 +288,14 @@ function drawFluid() {
 
 function drawFluidCells() {
     // 3 Values per fluidCell are saved, therefore we divide the total length of the array at this timeIndex by 3
-    for (let i = 0; i < fluidCells[relativeTimePassed].length/3; i++) {
-        if (fluidCells[relativeTimePassed][i * 3] != undefined) {
-            let fluidColorIndex = Math.min(fluidCells[relativeTimePassed][i * 3 + 1], fluidColorLength - 1);
-            let fluidColorPolarityIndex = Math.min(Math.max(fluidCells[relativeTimePassed][i * 3 + 2], -fluidColorPolarityLength), fluidColorPolarityLength) + fluidColorPolarityLength;
+    for (let i = 0; i < fluidCells[relativeIndex][relativeTimePassed].length/3; i++) {
+        if (fluidCells[relativeIndex][relativeTimePassed][i * 3] != undefined) {
+            let fluidColorIndex = Math.min(fluidCells[relativeIndex][relativeTimePassed][i * 3 + 1], fluidColorLength - 1);
+            let fluidColorPolarityIndex = Math.min(Math.max(fluidCells[relativeIndex][relativeTimePassed][i * 3 + 2], -fluidColorPolarityLength), fluidColorPolarityLength) + fluidColorPolarityLength;
     
             let color = fluidCellColors[fluidColorPolarityIndex][fluidColorIndex];
     
-            let index = fluidCells[relativeTimePassed][i * 3];
+            let index = fluidCells[relativeIndex][relativeTimePassed][i * 3];
 
             fluidCellSprites[index].tint = color;
         }

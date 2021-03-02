@@ -60,7 +60,9 @@ class explosion {
 					let tmpForceVelocity = [tmpFluidParticle.pos[0] - self.pos[0], tmpFluidParticle.pos[1] - self.pos[1]];
 					tmpForceVelocity = geometric.setMag(tmpForceVelocity, (self.force/geometric.dist(self.pos, tmpFluidParticle.pos)) * 2);
 	
-					fluid.addAcceleration(tmpFluidParticle, tmpForceVelocity);
+					// fluid.addAcceleration(tmpFluidParticle, tmpForceVelocity);
+					tmpFluidParticle.xv += tmpForceVelocity[0];
+					tmpFluidParticle.yv += tmpForceVelocity[1];
 				}
 			});
 		}
