@@ -628,6 +628,7 @@ function logFluidExplosion(size, force) {
 
 exports.logFluidExplosion = logFluidExplosion;
 
+/*
 function logFluidFlowfield(size, duration, form) {
     let type;
     let shape;
@@ -652,6 +653,7 @@ function logFluidFlowfield(size, duration, form) {
 }
 
 exports.logFluidFlowfield = logFluidFlowfield;
+*/
 
 // Save all reactions to a file
 function saveReactionFile() {

@@ -32,7 +32,7 @@ let cellularAutomataResolution;
 let fieldWidth, timeEnd, saveFreq;
 let loadProgress = 0;
 
-let tmpPath = 'undefined';
+let tmpPath = '2yjo2y';
 
 let startIDHex = '';
 let startDate;

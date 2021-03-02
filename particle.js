@@ -29,7 +29,7 @@ let lowestAkin;
 // The first values is the startingvalue and the second value is the increasing value
 let multiRange = [1, 7]
 let fluidMovementVelocity = [6, 1];
-let fluidMovementSize = [10, 3];
+let fluidMovementSize = [10, 2];
 let fluidExplosionSize = [32, 8];
 let fluidExplosionStrength = [8, 3];
 let fluidflowfieldSize = [64, 8];
@@ -404,7 +404,8 @@ class Particle {
 			0 = FluidMovement (FM) / 1 = FluidExplosion (FE) / 2 = Fluidflowfield (FF) / 3 = CA Neighbourhood/Rule Set (CAS) / 4 = CA Complete (CAC) / 5 = CA Animate (CAA)
 
 			Multi is the multiplicator which determines strength or other values of the result. Multi is determined by the state of the reaction and then subtracted by
-			lowestAkin. If more particles react then the reactionCount the differnce is added to multi, which can also result in an value thats out of range. 
+			lowestAkin. If more particles react then the reactionCount the differnce is added to multi, which can also result in an value thats out of range. The lowest possible+
+			multi value is .2.
 			All values range as followed:
 
 			Multi 0-7;
@@ -416,18 +417,16 @@ class Particle {
 			CA Animate size 8-16
 		*/
 		if (reactionResult != undefined) {
-			// let multi = Math.max(Math.floor(((simulation.stateMax/3 * 2 - Math.abs(simulation.stateMax/3 * 2 - Math.abs(this.state))) * 2 - lowestAkin)/2), 1);
-			// let multi = Math.round(((simulation.stateMax/3 * 2 - Math.abs(simulation.stateMax/3 * 2 - Math.abs(this.state))) * 2 - lowestAkin)/4) + 2;
-
-			let multiArray = [1, 2, 3, 4, 5, 6, 7, 6, 4, 2, 0];
+			let multiArray = [.2, .2, 3, 4, 5, 6, 7, 6, 4, 2, 0];
 			let multi = multiArray[Math.abs(this.state)];
+			
 			multi -= lowestAkin;
 			multi += (this.tmpCalcParticles.length - this.reactionCount);
-			multi = Math.max(multi, 0);
+			multi = Math.max(multi, .2);
 
 			if (reactionResult == 0) {
-				let velocity = fluidMovementVelocity[0] + multi * fluidMovementVelocity[1];
-				let size = fluidMovementSize[0] + multi * fluidMovementSize[1];
+				let velocity = (fluidMovementVelocity[0] * Math.min(mulit, 1)) + multi * fluidMovementVelocity[1];
+				let size = (fluidMovementVelocity[0] * Math.min(mulit, 1)) + multi * fluidMovementSize[1];
 
 				this.setFluidMovement(center, velocity, size, tmpVelocity, Math.ceil((binaryResult + 1)/4));
 			} else if (reactionResult == 1) {
@@ -436,10 +435,7 @@ class Particle {
 
 				this.setFluidExplosion(center, size, strength);
 			} else if (reactionResult == 2) {
-				let size = fluidflowfieldSize[0] + multi * fluidflowfieldSize[1];
-				let duration = fluidflowfieldDuration[0] + multi * fluidflowfieldDuration[1];
-
-				this.setFluidflowfield(center, size, duration, binaryResult);
+				
 			} else if (reactionResult == 3) {
 				// Form 0 = rectangle, 1 = circle
 				let form = Math.abs(this.state) % 2;
@@ -564,7 +560,7 @@ class Particle {
 		}
 
 		let tmpDir = geometric.setMag(dir, fluidVelocityMag);
-		fluid.addVelocity(tmpDir, fluidSize, [center[0] + tmpDir[0]/2, center[1] + tmpDir[1]/2]);
+		fluid.addVelocity(tmpDir, fluidSize, center);
 
 		this.setFluidCellPolarity(center);
 	}
@@ -581,29 +577,10 @@ class Particle {
 		this.setFluidCellPolarity(center);
 	}
 
-	setFluidflowfield(center, size, duration, form) {
-		if (form >= 8) {
-			form = Math.round((form - 8)/8.0);
-		} else {
-			form = Math.round(form/8.0);
-		}
+	setFluidflowfield(center, size) {
 
-		// UNCOMMENT to log Fluidflowfield
-		if (simulation.logData) {
-			log.logFluidFlowfield(size, duration, form);
-			log.fluidFlowfieldCount++;
-		}
 
-		if (form >= 8) {
-			let dir = form % 4;
-			fluid.setFluidflowfieldHourglass(center, size, dir, form, duration);
-		} else {
-			let rotateDir = form % 2;
-			let crossRotate = Math.ceil((form + 1)/2.0) % 2;
-			fluid.setFluidflowfieldSwirl(center, size, rotateDir, crossRotate, form, duration);
-		}
 
-		this.setFluidCellPolarity(center);
 	}
 
 	setFluidCellPolarity(center) {

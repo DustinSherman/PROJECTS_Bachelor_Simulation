@@ -179,6 +179,8 @@ exports.draw = draw;
 
 function updateParticle() {
     for (i = 0; i < particles.length; i++) {
+        let signedOut = false;
+
         var p = particles[i];
 
         // If particle gets to slow stop it
@@ -213,8 +215,7 @@ function updateParticle() {
             
             p.px = p.x;
             p.py = p.y;
-        }
-        else {
+        } else {
             if (p.pos[0] < 0) {
                 p.pos[0] += fieldWidth;
             } else if (p.pos[0] >= fieldWidth) {
@@ -226,7 +227,6 @@ function updateParticle() {
             } else if (p.pos[1] >= fieldWidth) {
                 p.pos[1] -= fieldWidth;
             }
-
         }
         
         // Slow particle down
@@ -366,3 +366,15 @@ function changeFluidCellPolarity(index, val) {
 }
 
 exports.changeFluidCellPolarity = changeFluidCellPolarity;
+
+function getFluidCellTorus(cellPos) {
+    let fluidCellCount = simulation.fieldWidth/fluidCellResolution;
+    while (cellPos < 0) {
+        cellPos += fluidCellCount;
+    } 
+    while (cellPos >= fluidCellCount) {
+        cellPos -= fluidCellCount;
+    }
+    return cellPos;
+}
+exports.getFluidCellTorus = getFluidCellTorus;

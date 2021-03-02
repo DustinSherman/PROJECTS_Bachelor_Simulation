@@ -7,7 +7,6 @@
 
 let fm = 0;
 let fe = 1;
-let ff = 2;
 let cas = 3;
 let cac = 4;
 let caa = 5;
@@ -16,13 +15,13 @@ let particleResults = [
     // Results FluidMovement (FM) / FluidExplosion (FE) / Fluidflowfield (FF) / CA Neighbourhood/Rule Set (CAS) / CA Complete (CAC) / CA Animate (CAA)
 
     // Lowest Akin / State	| 1   | -1  | 2   | -2  | 3   | -3  | 4   | -4  | 5   | -5  | 6   | -6  | 7   | -7  | 8   | -8  | 9   | -9  | 10  | -10 | 11  | -11 |
-    /* 0 */                 [     ,     ,     ,     , fm  , cas , fe  , cac , fe  , cac , fm  , cac ,     ,     , ff  , caa ,     ,     ,     ,     ,     ,     ],
-    /* 1 */                             [     ,     ,     ,     ,     ,     ,     ,     ,     ,     , ff  , caa , fe  , cac , ff  , caa , ff  , caa , ff  , caa ],
-    /* 2 */                                         [ fm  , cas , fm  , cas ,     ,     ,     ,     ,     ,     , fm  , cas ,     ,     , fe  , cac , fe  , cac ],
+    /* 0 */                 [ fm  , fm  , fm  , fm  , fm  , fm  , fe  , cac , fe  , cac , fm  , cac ,     ,     , fe  , caa ,     ,     ,     ,     ,     ,     ],
+    /* 1 */                             [ fm  , fm  , fm  , fm  ,     ,     ,     ,     ,     ,     , fe  , caa , fe  , cac , fe  , caa , fe  , caa , fe  , caa ],
+    /* 2 */                                         [ fm  , fm  , fm  , cas ,     ,     ,     ,     ,     ,     , fm  , cas ,     ,     , fe  , cac , fe  , cac ],
     /* 3 */                                                     [ fm  , cas , fm  , cas ,     ,     ,     ,     , fm  , cas ,     ,     , fm  , cas ,     ,     ],
-    /* 4 */                                                                 [ fm  , cas , fm  , cas , ff  , caa , fm  , cas ,     ,     , fm  , cas ,     ,     ],
-    /* 5 */                                                                             [ fe  , cac ,     ,     , ff  , caa , ff  , caa , fm  , cas ,     ,     ],
-    /* 6 */                                                                                         [     ,     , fe  , cac ,     ,     , ff  , caa , ff  , caa ],
+    /* 4 */                                                                 [ fm  , cas , fm  , cas , fe  , caa , fm  , cas ,     ,     , fm  , cas ,     ,     ],
+    /* 5 */                                                                             [ fe  , cac ,     ,     , fe  , caa , fe  , caa , fm  , cas ,     ,     ],
+    /* 6 */                                                                                         [     ,     , fe  , cac ,     ,     , fe  , caa , fe  , caa ],
     /* 7 */                                                                                                     [     ,     ,     ,     , fe  , cac , fe  , cac ],
     /* 8 */                                                                                                                 [     ,     ,     ,     ,     ,     ],
     /* 9 */                                                                                                                             [     ,     ,     ,     ],

@@ -16,7 +16,7 @@ const log = require("./log.js");
 
 // VARIABLES
 let simulate = true;
-let timeEnd = 1200;
+let timeEnd = 7200;
 let fieldWidth = 768;
 let logData = true;
 // Particle Values
@@ -123,7 +123,7 @@ function setup() {
 	// PARTICLES
 	effects.explosionSetup();
 
-	// startPosition();
+	startPosition();
 
 
 	/*
@@ -256,29 +256,6 @@ exports.timePassed = timePassed;
 function draw() {
 	if (simulate) {
 		while (timePassed < timeEnd) {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-			if (timePassed == 0) {
-				fluid.addVelocity([24, 24], 64, [fieldWidth/2, fieldWidth/2]);
-			}
-
-
-
-
-			
-
 			gatherData();
 			
 			// Print process to console
@@ -321,24 +298,6 @@ function draw() {
 
 			fluidTree = new quadtree([fieldWidth / 2, fieldWidth / 2], fieldWidth, fluidQuadtreeCapacity, fluid.particles);
 			exports.fluidTree = fluidTree;
-
-			// Fluid Flow Cells update
-			/*
-			for (let i = 0; i < fluid.flowCells.length; i++) {
-				fluid.flowCells[i].updateFluidParticles();
-			}
-			*/
-
-			/*
-			for (let i = fluid.flowCells.length - 1; i >= 0; i--) {
-				if (fluid.flowCells[i].duration <= 0) {
-					fluid.flowCells.splice(i, 1);
-				}
-			}
-			*/
-
-			// Trailsupdate
-			// effects.updateTrails();
 
 			// Cellular Automata update
 			ca.update();
