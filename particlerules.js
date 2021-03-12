@@ -17,14 +17,14 @@ let particleResults = [
 
     // Lowest Akin / State	| 1   | -1  | 2   | -2  | 3   | -3  | 4   | -4  | 5   | -5  | 6   | -6  | 7   | -7  | 8   | -8  | 9   | -9  | 10  | -10 | 11  | -11 |
     /* 0 */                 [ fm  , fm  , fm  , fm  , fm  , fm  , fe  , fe  , cac , cac , fm  , fm  , fe  , fe  , fe  , fe  , caa , caa ,     ,     , fe  , fe  ],
-    /* 1 */                             [ fm  , fm  , fm  , fm  , fm  , fm  , fm  , fm  , fm  , fm  , cas , cas , cac , cac , cac , cac , fe  , fe  , caa , caa ],
-    /* 2 */                                         [ fm  , fm  , fm  , fm  , cas , cas ,     ,     ,     ,     ,     ,     , fm  , fm  , caa , caa , cac , cac ],
-    /* 3 */                                                     [ fm  , fm  , fm  , fm  , fm  , fm  ,     ,     ,     ,     ,     ,     , cac , cac , cas , cas ],
+    /* 1 */                             [ fm  , fm  , fm  , fm  , fm  , fm  , fm  , fm  , fm  , fm  , cac , cac , cac , cac , cas , cas , fe  , fe  , caa , caa ],
+    /* 2 */                                         [ fm  , fm  , fm  , fm  , cac , cac ,     ,     ,     ,     ,     ,     , cac , cac , caa , caa , cas , cas ],
+    /* 3 */                                                     [ fm  , fm  , fm  , fm  , fm  , fm  ,     ,     ,     ,     , fm  , fm  , cas , cas , cas , cas ],
     /* 4 */                                                                 [ fm  , fm  , fm  , fm  ,     ,     ,     ,     ,     ,     , cas , cas ,     ,     ],
-    /* 5 */                                                                             [ fe  , fe  , cac , cac , cas , cas , fm  , fm  ,     ,     ,     ,     ],
-    /* 6 */                                                                                         [ fe  , fe  , cac , cac , cas , cas , cas , cas ,     ,     ],
-    /* 7 */                                                                                                     [     ,     , cac , cac , cac , cac , cas , cas ],
-    /* 8 */                                                                                                                 [ caa , caa , fe  , fe  , caa , caa ],
+    /* 5 */                                                                             [ fe  , fe  , cac , cac , cac , cac , fm  , fm  ,     ,     ,     ,     ],
+    /* 6 */                                                                                         [ fe  , fe  , cac , cac , cac , cac , cas , cas ,     ,     ],
+    /* 7 */                                                                                                     [     ,     , cas , cas , cas , cas , cas , cas ],
+    /* 8 */                                                                                                                 [ caa , caa , fe  , fe  , cas , cas ],
     /* 9 */                                                                                                                             [     ,     , fe  , fe  ],
     /* 10 */                                                                                                                                        [     ,     ]
 ]

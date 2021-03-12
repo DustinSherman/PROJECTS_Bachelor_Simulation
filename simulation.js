@@ -30,8 +30,10 @@ const fluidParticleSpeedReduction = .8;
 const simulateFluidCells = true;
 const fluidCellResolution = 8; // Must be multiply or the same as fluidResolution
 const fluidCellRadius = 28;
+const fluidCellMaxCount = 127;
 // Cellular Automata Values
-const caResolution = 1;
+const caResolution = 3;
+const caFreq = 2;
 // Quadtree
 const fluidQuadtreeCapacity = 16;
 
@@ -46,11 +48,14 @@ exports.fluidParticleSpeedReduction = fluidParticleSpeedReduction;
 exports.simulateFluidCells = simulateFluidCells;
 exports.fluidCellResolution = fluidCellResolution;
 exports.fluidCellRadius = fluidCellRadius;
+exports.fluidCellMaxCount = fluidCellMaxCount;
 exports.caResolution = caResolution;
+exports.caFreq = caFreq;
 exports.fluidQuadtreeCapacity = fluidQuadtreeCapacity;
 
 // Timing
 // 5m / 24 fps => 7200
+// 6m / 24 fps => 8640
 // 8m / 24 fps => 11520
 // 9m / 24 fps => 12960
 // 10m / 24 fps => 14400
@@ -61,7 +66,8 @@ exports.fluidQuadtreeCapacity = fluidQuadtreeCapacity;
 exports.timeEnd = timeEnd;
 let realtimeStart = Date.now();
 exports.realtimeStart = realtimeStart;
-let timeSteps = [0, 11520, 12960];
+let timeSteps = [0, 8640, 11520];
+// let timeSteps = [0, 1200, 2400];
 exports.timeSteps = timeSteps;
 let phase = 0;
 exports.phase = phase;
@@ -125,15 +131,6 @@ function setup() {
 
 	startPosition();
 
-
-	/*
-	particles.push(new particle([fieldWidth/2, fieldWidth/2], [0, 1], 4, 2, 0));
-	particles[0].polarity = 1;
-	particles.push(new particle([fieldWidth/2, fieldWidth/2], [1, 1], 4, 2, 1));
-	particles.push(new particle([fieldWidth/2, fieldWidth/2], [1, 0], 4, 2, 2));
-	// particles.push(new particle([fieldWidth/2, fieldWidth/2], [0, -1], 4, 2, 3));
-	*/
-
 	exports.particles = particles;
 
 	// Upadte Particle Statistics
@@ -149,7 +146,7 @@ function setup() {
 
 	fluidTree = new quadtree([fieldWidth / 2, fieldWidth / 2], fieldWidth, fluidQuadtreeCapacity, fluid.particles);
 	exports.fluidTree = fluidTree;
-	
+
 	fluid.initFluidCells();
 
 	// CELLULAR AUTOMATA
@@ -177,12 +174,12 @@ function startPosition() {
 
 	for (let i = 0; i < radiParticleCount.length; i++) {
 		let radius = radiSize * (i + 1);
-		let angleStep = (Math.PI * 2)/radiParticleCount[i];
+		let angleStep = (Math.PI * 2) / radiParticleCount[i];
 
 		for (let j = 0; j < radiParticleCount[i]; j++) {
 			let tmpAngle = angleStep * j;
 
-			let pos = [fieldWidth/2 + radius * 2 * Math.sin(tmpAngle), fieldWidth/2 + radius * 2 * Math.cos(tmpAngle)];
+			let pos = [fieldWidth / 2 + radius * 2 * Math.sin(tmpAngle), fieldWidth / 2 + radius * 2 * Math.cos(tmpAngle)];
 			let moveDir = [pos[0] - fieldWidth / 2, pos[1] - fieldWidth / 2];
 			moveDir = geometric.setMag(moveDir, math.max(geometric.mag(moveDir), 1));
 
@@ -201,6 +198,9 @@ function startPosition() {
 
 		// UNCOMMENT for Unordered Start Position
 		// startBinString += Math.round(Math.random());
+
+		// UNCOMMENT to add just one kind of value
+		/// startBinString += '0';
 	}
 
 	// Set Start Vals
@@ -229,8 +229,9 @@ function saveSetupData() {
 		'saveFreq': data.saveFreq,
 		'fluidParticleCount': fluid.particleCount,
 		'fluidCellResolution': fluidCellResolution,
-		'fluidCellBaseParticleCount' : fluid.fluidCellBaseParticleCount,
-		'caResolution': caResolution
+		'fluidCellBaseParticleCount': fluid.fluidCellBaseParticleCount,
+		'caResolution': caResolution,
+		'caFreq': caFreq
 	}
 
 	tmpData = JSON.stringify(tmpData);
@@ -258,7 +259,7 @@ function draw() {
 	if (simulate) {
 		while (timePassed < timeEnd) {
 			gatherData();
-			
+
 			// Print process to console
 			process.stdout.clearLine();
 			process.stdout.cursorTo(0);
@@ -275,7 +276,7 @@ function draw() {
 					explosions.splice(i, 1);
 				}
 			}
-			
+
 			// Particles update
 			for (let i = 0; i < 5; i++) {
 				particles.forEach(function (particle) {
@@ -301,7 +302,9 @@ function draw() {
 			exports.fluidTree = fluidTree;
 
 			// Cellular Automata update
-			ca.update();
+			if (timePassed % caFreq == 0) {
+				ca.update();
+			}
 
 			// Update phase
 			for (let i = 0; i < timeSteps.length; i++) {
@@ -341,7 +344,7 @@ function draw() {
 
 			process.stdout.clearLine();
 			process.stdout.cursorTo(0);
-			console.log("Simulation end at " + timePassed + ". Total Time: " + Math.floor((Date.now() - realtimeStart)/60000) + "m " + Math.floor((Date.now() - realtimeStart) % 60) + "s");
+			console.log("Simulation end at " + timePassed + ". Total Time: " + Math.floor((Date.now() - realtimeStart) / 60000) + "m " + Math.floor((Date.now() - realtimeStart) % 60) + "s");
 		}
 	}
 };
@@ -356,38 +359,35 @@ exports.updateQuadtree = updateQuadtree;
 exports.draw = draw;
 
 function particleAction(particle, type) {
-    if (!particle.merged) {
-        if (type == 0) {
-            particle.calcGrav();
-        }
-        else if (type == 1) {
+	if (!particle.merged) {
+		if (type == 0) {
+			particle.calcGrav();
+		} else if (type == 1) {
 			// Dont calculate Reactions or merge in the last phase
 			if (phase < 2) {
 				if (!particle.calced) {
 					particle.calc();
 				}
 			}
-        }
-        else if (type == 2) {
+		} else if (type == 2) {
 			// Dont execute Reactions or merge in the last phase
 			if (phase < 2) {
 				particle.action();
 			}
-        }
-        else if (type == 3) {
-            particle.move();
-        }
-    }
-    if (type == 4) {
-        particle.reset();
-    }
+		} else if (type == 3) {
+			particle.move();
+		}
+	}
+	if (type == 4) {
+		particle.reset();
+	}
 }
 
 // ////////////////////////////// PHASES
 
 let totalTimeEndPhase = (timeEnd - timeSteps[timeSteps.length - 1]) - 60;
-let fluidParticleMaxVelocityReduce = fluid.maxVelocity/totalTimeEndPhase;
-let velocityMaxAbsReduce = particleVelocityMaxAbs/totalTimeEndPhase;
+let fluidParticleMaxVelocityReduce = fluid.maxVelocity / totalTimeEndPhase;
+let velocityMaxAbsReduce = particleVelocityMaxAbs / totalTimeEndPhase;
 
 function endPhase() {
 	// Slow all particles down
@@ -398,34 +398,45 @@ function endPhase() {
 			particle.velocityMaxAbs = 0;
 		}
 	});
-	
+
 	// Slow all fluid particles down
 	fluid.reduceFluidParticleMaxVelocity(fluidParticleMaxVelocityReduce);
 
 	// Decrease Rule of CA
-	let ruleDecreaseFreq = Math.floor((timeEnd - timeSteps[timeSteps.length - 1])/caRuleCount);
+	let ruleDecreaseFreq = Math.floor((timeEnd - timeSteps[timeSteps.length - 1]) / caRuleCount);
 
 	if ((timePassed - timeSteps[timeSteps.length - 1]) % ruleDecreaseFreq == 0) {
 		if (caCurrentRule > 0) {
 			caCurrentRule--;
 		}
 
-		ca.cells.forEach(function (cell) {
-			if (cell.rule > caCurrentRule) {
-				cell.rule = caCurrentRule;
+		for (let i = 0; i < ca.cells.length; i++) {
+			for (let j = 0; j < ca.cells[i].length; j++) {
+				if (ca.cells[i][j].ruleIndex > caCurrentRule) {
+					ca.updateRule(ca.cells[i][j], caCurrentRule);
+				}
 			}
-		});
+		}
 	}
 
 	// Decrease all fluid Cells
-	let fluidCellDecreaseFreq = Math.floor((timeEnd - timeSteps[timeSteps.length - 1])/caRuleCount) * 2;
+	let fluidCellDecreaseFreq = Math.floor((timeEnd - timeSteps[timeSteps.length - 1]) / (fluidCellMaxCount - fluid.fluidCellBaseParticleCount)) * 2;
+	let fluidCellIncreaseFreq = Math.floor((timeEnd - timeSteps[timeSteps.length - 1]) / fluid.fluidCellBaseParticleCount) * 2;
 
 	if ((timePassed - timeSteps[timeSteps.length - 1]) % fluidCellDecreaseFreq == 0) {
-		fluid.fluidCells.forEach(function (fluidCell) {
-			if (fluidCell[0] > fluid.fluidCellBaseParticleCount) {
-				fluidCell[0]--;
+		for (let i = 0; i < fluid.fluidCells.length; i++) {
+			if (fluid.fluidCells[i][0] > fluid.fluidCellBaseParticleCount) {
+				fluid.fluidCells[i][0]--;
 			}
-		})
+		}
+	}
+
+	if ((timePassed - timeSteps[timeSteps.length - 1]) % fluidCellIncreaseFreq == 0) {
+		for (let i = 0; i < fluid.fluidCells.length; i++) {
+			if (fluid.fluidCells[i][0] < fluid.fluidCellBaseParticleCount) {
+				fluid.fluidCells[i][0]++;
+			}
+		}
 	}
 }
 
@@ -445,7 +456,7 @@ function gatherData() {
 			tmpData.push(parseFloat(particle.pos[0].toFixed(decimals)));
 			tmpData.push(parseFloat(particle.pos[1].toFixed(decimals)));
 		}
- 		particleData.push(tmpData);
+		particleData.push(tmpData);
 	})
 
 	// Gather Fluid Data
@@ -501,19 +512,19 @@ function gatherData() {
 		process.stdout.clearLine();
 		process.stdout.cursorTo(0);
 
-		let realTimePassed = Math.floor(Math.floor((Date.now() - realtimeStart)/60000)/60) + "h " + (Math.floor((Date.now() - realtimeStart)/60000) % 60) + "m " + (Math.floor((Date.now() - realtimeStart)/1000) % 60) + "s " + ((Date.now() - realtimeStart) % 1000) + "ms";
-		let elapsedTime = Math.floor((Date.now() - realtimeStart)/1000) - prevTime;
-		fps = data.saveFreq/elapsedTime;
+		let realTimePassed = Math.floor(Math.floor((Date.now() - realtimeStart) / 60000) / 60) + "h " + (Math.floor((Date.now() - realtimeStart) / 60000) % 60) + "m " + (Math.floor((Date.now() - realtimeStart) / 1000) % 60) + "s " + ((Date.now() - realtimeStart) % 1000) + "ms";
+		let elapsedTime = Math.floor((Date.now() - realtimeStart) / 1000) - prevTime;
+		fps = data.saveFreq / elapsedTime;
 		exports.fps = fps;
 
-		prevTime = Math.floor((Date.now() - realtimeStart)/1000);
+		prevTime = Math.floor((Date.now() - realtimeStart) / 1000);
 
-		let timeLeft = (timeEnd - timePassed)/fps;
+		let timeLeft = (timeEnd - timePassed) / fps;
 
 		let saveString = "Saved."
 		saveString += " Time " + timePassed + "/" + timeEnd + " (" + data.saveFreq + ").";
 		saveString += " Realtime " + realTimePassed + " FPS " + fps.toFixed(2);
-		saveString += " RemainingTime " + Math.floor(timeLeft/3600) + "h " + (Math.floor(timeLeft/60) % 60) + "m " + Math.floor(timeLeft % 60) + "s";
+		saveString += " RemainingTime " + Math.floor(timeLeft / 3600) + "h " + (Math.floor(timeLeft / 60) % 60) + "m " + Math.floor(timeLeft % 60) + "s";
 
 		console.log(saveString);
 	}
@@ -522,12 +533,12 @@ function gatherData() {
 let getCurrentFPSPrevTime = 0;
 
 function getCurrentFPS() {
-	let elapsedTime = Math.floor((Date.now() - realtimeStart)/1000) - getCurrentFPSPrevTime;
+	let elapsedTime = Math.floor((Date.now() - realtimeStart) / 1000) - getCurrentFPSPrevTime;
 	let elapsedFrames = timePassed - prevFrames;
 
-	let currentFPS = elapsedFrames/elapsedTime;
+	let currentFPS = elapsedFrames / elapsedTime;
 
-	getCurrentFPSPrevTime = Math.floor((Date.now() - realtimeStart)/1000);
+	getCurrentFPSPrevTime = Math.floor((Date.now() - realtimeStart) / 1000);
 	prevFrames = timePassed;
 
 	return [currentFPS, elapsedFrames];
@@ -540,7 +551,7 @@ function compareFluidArray(_RawData, _PreRawData) {
 	let preData = Array.from(_PreRawData);
 	let tmpData = [];
 
-	for (let i = 0; i < data.length/3; i++) {
+	for (let i = 0; i < data.length / 3; i++) {
 		let dataChanged = false;
 
 		if (data[i * 3 + 1] !== preData[i * 3 + 1] || data[i * 3 + 2] !== preData[i * 3 + 2]) {
@@ -562,23 +573,23 @@ function compareFluidArray(_RawData, _PreRawData) {
 }
 
 function gatherParticleInfo() {
-    let particleValsPositiv = [];
-    let particleValsNegativ = [];
+	let particleValsPositiv = [];
+	let particleValsNegativ = [];
 
-    for (let i = 0; i < stateMax; i++) {
-        particleValsPositiv.push(0);
-        particleValsNegativ.push(0);
-    }
+	for (let i = 0; i < stateMax; i++) {
+		particleValsPositiv.push(0);
+		particleValsNegativ.push(0);
+	}
 
-    for (let i = 0; i < particles.length; i++) {
-        if (particles[i].state > 0) {
-            particleValsPositiv[particles[i].state - 1]++;
-        } else {
-            particleValsNegativ[math.abs(particles[i].state) - 1]++;
-        }
-    }
+	for (let i = 0; i < particles.length; i++) {
+		if (particles[i].state > 0) {
+			particleValsPositiv[particles[i].state - 1]++;
+		} else {
+			particleValsNegativ[math.abs(particles[i].state) - 1]++;
+		}
+	}
 
-    return [particleValsPositiv, particleValsNegativ];
+	return [particleValsPositiv, particleValsNegativ];
 }
 
 exports.gatherParticleInfo = gatherParticleInfo;

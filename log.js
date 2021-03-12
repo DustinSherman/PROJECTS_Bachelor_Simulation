@@ -14,6 +14,10 @@ exports.record = record;
 
 let particleReactionResults = [];
 
+let explosionCount = 0;
+let explosionSizeTotal = 0;
+let explosionForceTotal = 0;
+
 let caCount = 0;
 let caSizeTotal = 0;
 let caRuleTotal = 0;
@@ -277,6 +281,8 @@ function saveParticles(_Freq) {
         string += "\r\n        Akin " + akinString;
         string += "\r\n        Polarity " + polarityString;
         
+        string += "\r\n        Explosion Count " + explosionCount + " Ø Size " + (explosionSizeTotal/explosionCount).toFixed(2) + " Ø Force " + (explosionForceTotal/explosionCount).toFixed(2);
+
 
         // UNCOMMENT to log the average and overview of the Cellular Automata Rules, which are determined by the number of fluid particles in a radius around the particle
         /*
@@ -357,7 +363,7 @@ function saveParticles(_Freq) {
 exports.saveParticles = saveParticles;
 
 function saveFile(fileName, data) {
-    let saveDestination = 'public/data/' + '/';
+    let saveDestination = 'public/data/' + simulation.startHexString + '/';
     let dateString = (simulation.startDate.getFullYear() % 100) + pad((simulation.startDate.getMonth() + 1), 2) + pad(simulation.startDate.getDate(), 2) + pad(simulation.startDate.getHours(), 2) + pad(simulation.startDate.getMinutes(), 2);
 
     fs.writeFileSync(saveDestination + dateString + fileName + simulation.startHexString + '.txt', data);
@@ -466,11 +472,15 @@ function logReactionLowestAkin(lowestAkin) {
 exports.logReactionLowestAkin = logReactionLowestAkin;
 
 function logExplosion(size, force, count, threshold) {
-    let string = "\r\n" + "        " + "Fluid Explosion " + "Size " + size + " Force " + force;
+    let string = "\r\n" + "        " + "Explosion " + "Size " + size + " Force " + force;
 
     if (count > threshold) {
         string += " " + count + "/" + threshold + " near Particles";
     }
+
+    explosionCount++;
+    explosionSizeTotal += size;
+    explosionForceTotal += force;
 
     record.push(string);
 

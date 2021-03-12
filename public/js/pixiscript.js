@@ -91,8 +91,8 @@ function init() {
 
     console.log("Init Pixi");
 
-    initFluid();
     initCellularAutomata();
+    initFluid();
 
     // Set Animation Vals
     fpsInterval = 1000/fps;
@@ -138,7 +138,7 @@ function draw() {
     drawFluidCells();
     drawParticles();
     drawFluid();
-    // drawCellularAutomata();
+    drawCellularAutomata();
     
     // drawParticleTrails();
     // drawShockwaves();
@@ -324,9 +324,15 @@ function initCellularAutomata() {
             resources['../assets/cell.png'].texture
         );
 
-        caSprites[i].x = (i % rowCount) * cellularAutomataResolution;
-        caSprites[i].y = Math.floor(i/rowCount) * cellularAutomataResolution;
+        let cellularAutomataPadding = (cellularAutomataResolution - cellularAutomataCellSize)/2;
+
+        caSprites[i].x = (i % rowCount) * cellularAutomataResolution + cellularAutomataPadding;
+        caSprites[i].y = Math.floor(i/rowCount) * cellularAutomataResolution + cellularAutomataPadding;
         caSprites[i].visible = caCells[i];
+
+        // Set Size to half of original resolution
+        caSprites[i].width = cellularAutomataCellSize;
+        caSprites[i].height = cellularAutomataCellSize;
 
         cellularAutomataContainer.addChild(caSprites[i]);
     }
@@ -357,8 +363,8 @@ function updateCellularAutomata() {
 
 function drawCellularAutomata() {
     // Update Cells
-    for (let i = 0; i < cellularAutomataData[relativeTimePassed].length; i++) {
-        let index = cellularAutomataData[relativeTimePassed][i];
+    for (let i = 0; i < cellularAutomataData[relativeIndex][relativeTimePassed].length; i++) {
+        let index = cellularAutomataData[relativeIndex][relativeTimePassed][i];
 
         caCells[index] = !caCells[index];
 

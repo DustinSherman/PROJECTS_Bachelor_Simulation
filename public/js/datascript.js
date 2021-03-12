@@ -10,7 +10,7 @@ let dataObjects = [
     particles,
     fluid,
     fluidCells,
-    // cellularAutomataData,
+    cellularAutomataData,
     // particleTrails,
     // shockwaves
 ]
@@ -19,20 +19,24 @@ let dataNames = [
     'particles',
     'fluid',
     'fluidCells',
-    // 'cellularAutomata',
+    'cellularAutomata',
     // 'trails',
     // 'shockwaves'
 ]
 
 let fluidParticleCount;
 
+let cellularAutomataCellSize = 1;
 let cellularAutomataResolution;
+let cellularAutomataFrequency;
 
 // Setup Data
 let fieldWidth, timeEnd, saveFreq;
 let loadProgress = 0;
 
-let tmpPath = '2yjo2y';
+// let tmpPath = '2yjo2y';
+let tmpPath = '2mbnpm';
+// let tmpPath = 'undefined';
 
 let startIDHex = '';
 let startDate;
@@ -53,6 +57,7 @@ function dataInit() {
             fluidCellResolution = data['fluidCellResolution'];
             fluidCellBaseParticleCount = data['fluidCellBaseParticleCount'];
             cellularAutomataResolution = data['caResolution'];
+            cellularAutomataFrequency = data['caFreq'];
 
             // Iterate through all files
             for (let i = 0; i < dataObjects.length; i++) {

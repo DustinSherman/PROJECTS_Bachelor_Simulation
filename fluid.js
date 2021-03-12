@@ -30,6 +30,7 @@ let fluidCellsPrev = [];
 let fluidCellData = [];
 let fluidCellResolution;
 let fluidCellRadius;
+let fluidCellBaseParticleCount;
 
 exports.fluidCellData = fluidCellData;
 
@@ -100,8 +101,6 @@ function initParticles() {
     
     exports.particles = particles;
     exports.vectorCells = vectorCells;
-
-
 }
 
 exports.initParticles = initParticles;
@@ -166,7 +165,7 @@ function draw() {
                 // let index = i.toString(16);
                 let index = i;
 
-                fluidCellData.push(index, fluidCells[i][0], fluidCells[i][1]);
+                fluidCellData.push(index, Math.min(fluidCells[i][0], simulation.fluidCellMaxCount), fluidCells[i][1]);
 
                 // Set previous FluidCellData
                 fluidCellsPrev[i] = [fluidCells[i][0], fluidCells[i][1]];
@@ -415,3 +414,9 @@ function getFluidCellTorus(cellPos) {
 }
 
 exports.getFluidCellTorus = getFluidCellTorus;
+
+function reduceFluidParticleMaxVelocity(maxVelocityReduce) {
+    maxVelocity -= maxVelocityReduce;
+}
+
+exports.reduceFluidParticleMaxVelocity = reduceFluidParticleMaxVelocity;

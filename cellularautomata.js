@@ -82,6 +82,7 @@ function cell(x, y) {
     this.preAlive = false;
 
     this.neighbourhoodIndex = -1;
+    this.ruleIndex = 0;
     this.rule;
 
     this.calced = false;
@@ -151,6 +152,7 @@ function setRule(center, size, form, index) {
     tmpCells = [...getCells(center, size, form)];
 
     for (let i = 0; i < tmpCells.length; i++) {
+        tmpCells[i].ruleIndex = index;
         tmpCells[i].rule = [...manual.rules[index]];
     }
 
@@ -163,6 +165,13 @@ function setRule(center, size, form, index) {
 }
 
 exports.setRule = setRule;
+
+function updateRule(cellData, ruleIndex) {
+    cellData.ruleIndex = ruleIndex;
+    cellData.rule = [...manual.rules[ruleIndex]];
+}
+
+exports.updateRule = updateRule;
 
 /*
     If the radius of a circle is 1 then a sqaure with 1,772 width and height has the same area as the cirlce.

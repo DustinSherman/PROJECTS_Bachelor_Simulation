@@ -7,7 +7,7 @@ const fluid = require("./fluid.js");
 
 let explosionSquareVals = [];
 let explosionMinSize = 2;
-let explosionMaxSize = 64;
+let explosionMaxSize = 384;
 let explosionMinForce = .2;
 let explosionMaxForce = 64;
 
