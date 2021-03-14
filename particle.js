@@ -295,10 +295,10 @@ class Particle {
 				If there are more than 16 particles, then the multiplier is (1 + (nearParticleCount - 16)/2) * abs(state)/2;
 			*/
 
-			let tmpExplosionForce = this.explosionForce * math.max(this.tmpCalcParticles.length / 3.0, 1);
-			let tmpExplosionSize = math.floor(this.explosionSize * math.max(this.tmpCalcParticles.length / 3.0, 1));
+			let tmpExplosionForce = this.explosionForce * math.max(this.tmpCalcParticles.length / 2.0, 1);
+			let tmpExplosionSize = math.floor(this.explosionSize * math.max(this.tmpCalcParticles.length / 2.0, 1));
 
-			let nearParticleRadius = 32;
+			let nearParticleRadius = 48;
 			let nearParticleCountThreshold = 16;
 			let nearParticles = simulation.tree.contentParticles(center, nearParticleRadius, 0);
 			let nearParticleCount = nearParticles.length;
@@ -309,17 +309,17 @@ class Particle {
 				// Increase the multiplicator even further for every particle close by with the same state-polarity
 				for (let i = 0; i < nearParticleCount; i++) {
 					if (this.state * nearParticles[i].state > 0 || (this.state === nearParticles[i].state)){
-						multiplicator += 1;
+						multiplicator += 1/16;
 					} else {
-						multiplicator += 1/4;
+						multiplicator += 1/64;
 					}
 				}
-				multiplicator -= nearParticleCountThreshold;
-				multiplicator = Math.max(multiplicator, 1);
-				multiplicator *= Math.abs(this.state)/(simulation.stateMax);
+				// multiplicator -= nearParticleCountThreshold;
+				// multiplicator = Math.max(multiplicator, 1);
+				// multiplicator *= Math.abs(this.state)/(simulation.stateMax/2);
 
 				tmpExplosionForce *= multiplicator;
-				tmpExplosionSize *= multiplicator;
+				tmpExplosionSize = Math.floor(tmpExplosionSize * multiplicator);
 			}
 
 

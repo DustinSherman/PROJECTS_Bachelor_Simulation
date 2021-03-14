@@ -34,8 +34,8 @@ let cellularAutomataFrequency;
 let fieldWidth, timeEnd, saveFreq;
 let loadProgress = 0;
 
-// let tmpPath = '2yjo2y';
-let tmpPath = '2mbnpm';
+let tmpPath = '2yjo2y';
+// let tmpPath = '2mbnpm';
 // let tmpPath = 'undefined';
 
 let startIDHex = '';

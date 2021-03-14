@@ -57,7 +57,7 @@ function logBaseSettings() {
 
     // UNCOMMENT to log some info
     settingsString += "\r\n" + "Info";
-    settingsString += "\r\n" + "  Deleted multiple directions for fluidMovement.";
+    settingsString += "\r\n" + "  Changing explosion values of particles for an even result count of particles.";
     settingsString += "\r\n" + " ";
 
     settingsString += "\r\n" + "General Settings / Data";
@@ -472,7 +472,7 @@ function logReactionLowestAkin(lowestAkin) {
 exports.logReactionLowestAkin = logReactionLowestAkin;
 
 function logExplosion(size, force, count, threshold) {
-    let string = "\r\n" + "        " + "Explosion " + "Size " + size + " Force " + force;
+    let string = "\r\n" + "        " + "Explosion " + "Size " + size.toFixed(2) + " Force " + force.toFixed(2);
 
     if (count > threshold) {
         string += " " + count + "/" + threshold + " near Particles";
@@ -611,7 +611,7 @@ function logTrails(pos) {
 exports.logTrails = logTrails;
 
 function logFluidVelocity(size, velocityMag, velocityVector) {
-    let string = "\r\n" + "        " + "FluidVeloity Size " + size + " Velocity " + velocityMag + " Vector " + velocityVector;
+    let string = "\r\n" + "        " + "FluidVeloity Size " + size.toFixed(2) + " Velocity " + velocityMag.toFixed(2) + " Vector (" + velocityVector[0].toFixed(2) + ", " + velocityVector[1].toFixed(2) + ")";
 
     fluidMoveCount++;
     fluidMoveSizeTotal += size;
