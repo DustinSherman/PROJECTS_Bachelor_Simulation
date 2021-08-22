@@ -1,0 +1,97 @@
+<!DOCTYPE HTML>
+
+<html>
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title></title>
+
+<link rel="stylesheet" type="text/css" href="/style/hamburgers.css">
+<link rel="stylesheet" type="text/css" href="/style/style.css">
+
+</head>
+
+<body class="loading" id="start">
+	<div id="nav">
+		<ul>
+			<li>
+				<a href="">
+					Start
+				</a>
+			</li>
+			<li>
+				<a href="">
+					About
+				</a>
+			</li>
+			<li>
+				<a href="">
+					Simulation
+				</a>
+			</li>
+			<li>
+				<a href="">
+					Imprint
+				</a>
+			</li>
+		</ul>
+	</div>
+
+	<div class="hamburger hamburger--squeeze" id="hamburger">
+		<div class="hamburger-box">
+			<div class="hamburger-inner"></div>
+		</div>
+	</div>
+
+	<div id="wrapper">
+		<h1>Automata<br> Universalis</h1>
+		<span class="version">v 0.1</span>
+
+		<p class="summary">Automata Universalis ist eine Simulation einer visuelle Interpretation einer Art Urknall, welche anhand von vorher festegelegten Parametern bestimmt wird. 
+			Jede Startbedingung erstellt dabei eine unterschiedliche und einzigartige Simulation. Jede Simulation dauert 10 Minuten und kann, sofern bereits simuliert, 
+			beliebig oft angesehen werden.</p>
+
+		<div id="bgStarsFront"></div>
+		<div id="bgStarsMiddle"></div>
+		<div id="bgStarsBack"></div>
+	</div>
+
+	<footer>
+
+	</footer>
+
+	<script src="../js/hamburgerscript.js"></script>
+
+	<script>
+		(function() {
+			var mousePos;
+
+			document.onmousemove = handleMouseMove;
+
+			function handleMouseMove(event) {
+				mousePos = {
+					x: event.pageX,
+					y: event.pageY
+				};
+
+				// Change background-position of wrapper
+				let bgMove = [(event.pageX - window.innerWidth/2)/window.innerWidth, (event.pageY - window.innerHeight/2)/window.innerHeight];
+				let bgFrontMovement = 60;
+				let bgMiddleMovement = 30;
+				let bgBackMovement = 15;
+
+				let bgFrontMove = [(bgFrontMovement * (bgMove[0] * 2)), (bgFrontMovement * (bgMove[1] * 2))];
+				let bgMiddleMove = [(bgMiddleMovement * (bgMove[0] * 2)), (bgMiddleMovement * (bgMove[1] * 2))];
+				let bgBackMove = [(bgBackMovement * (bgMove[0] * 2)), (bgBackMovement * (bgMove[1] * 2))];
+
+				document.getElementById("bgStarsFront").style.backgroundPosition = bgFrontMove[0] + "px " + bgFrontMove[1] + "px";
+				document.getElementById("bgStarsMiddle").style.backgroundPosition = bgMiddleMove[0] + "px " + bgMiddleMove[1] + "px";
+				document.getElementById("bgStarsBack").style.backgroundPosition = bgBackMove[0] + "px " + bgBackMove[1] + "px";
+			}
+		})();
+
+
+	</script>
+</body>
+
+</html>
