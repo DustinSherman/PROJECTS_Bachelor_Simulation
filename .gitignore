@@ -1,6 +1,0 @@
-**/node_modules
-**/public/**
-!/public/assets/*
-!/public/js/*
-!/public/style/*
-!/public/template.html
