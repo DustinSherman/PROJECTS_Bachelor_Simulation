@@ -1,0 +1,57 @@
+#hamburger {
+    top: 20px;
+    left: 20px;
+    z-index: 50;
+}
+
+#wrapper {
+    width: 100%;
+    min-height: 100%;
+    background: none;
+    /* padding: 0 20px; */
+    box-sizing: border-box;
+    text-align: center;
+
+    #bgStarsFront,
+    #bgStarsMiddle,
+    #bgStarsBack {
+        width: 100%;
+        min-height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    #bgStarsFront {
+        background-image: url('/assets/startbg_v.svg');
+    }
+
+    #bgStarsMiddle {
+        background-image: url('/assets/startbg_m.svg');
+    }
+
+    #bgStarsBack {
+        background-image: url('/assets/startbg_h.svg');
+    }
+}
+
+// Start Page
+body#start {
+    #wrapper {
+        h1 {
+            text-transform: uppercase;
+            z-index: 10;
+            flex-basis: 100%;
+            margin: 200px 0 0 0;
+        }
+
+        span.version {
+            flex-basis: 100%;
+        }
+
+        p.summary {
+            max-width: 600px;
+            margin: 200px 0;
+        }
+    }
+}

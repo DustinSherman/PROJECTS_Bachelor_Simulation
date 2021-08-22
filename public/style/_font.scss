@@ -1,0 +1,55 @@
+@font-face {
+    font-family: 'InconsolataExpanded-Light';
+    src: url('../assets/font/InconsolataExpanded-Light.ttf');
+}
+
+@font-face {
+    font-family: 'InconsolataSemiCondensed-Black';
+    src: url('../assets/font/InconsolataSemiCondensed-Black.ttf');
+}
+
+@font-face {
+    font-family: 'InconsolataSemiExpanded-ExtraLight';
+    src: url('../assets/font/InconsolataSemiExpanded-ExtraLight.ttf');
+}
+
+@font-face {
+    font-family: 'InconsolataSemiExpanded-SemiBold';
+    src: url('../assets/font/InconsolataSemiExpanded-SemiBold.ttf');
+}
+
+@font-face {
+    font-family: 'InconsolataCondensed-Black';
+    src: url('../assets/font/InconsolataCondensed-Black.ttf');
+}
+
+body {
+    font-size: 16px;
+}
+
+p,
+span,
+a,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: 'InconsolataSemiExpanded-SemiBold', 'Lucida Console', Monaco, monospace;
+    color: #fff;
+}
+
+a {
+    text-decoration: none;
+}
+
+h1 {
+    font-family: 'InconsolataSemiExpanded-ExtraLight', 'Lucida Console', Monaco, monospace;
+    font-size: 5.75rem;
+}
+
+p {
+    font-size: 1.1rem;
+    line-height: 1.5rem;
+}
