@@ -1,0 +1,127 @@
+<!DOCTYPE HTML>
+
+<html>
+
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title></title>
+
+	<link rel="stylesheet" type="text/css" href="../style/hamburgers.css">
+	<link rel="stylesheet" type="text/css" href="../style/style.css">
+
+	</head>
+
+	<body class="loading">
+		<header>
+			<div class="hamburger hamburger--squeeze" id="hamburger">
+				<div class="hamburger-box">
+					<div class="hamburger-inner"></div>
+				</div>
+			</div>
+
+			<div class="info">
+				<span class="headline">
+					Automata Universalis
+				</span>
+				<span id="iteration">
+					Iteration
+				</span>
+				<span id="date">
+					Initialisiert
+				</span>
+			</div>
+
+			<div class="controls">
+				<div class="overlay"></div>
+				<button id="stop">
+				</button>
+				<button id="playpause" class="active">
+				</button>
+				<button id="fastbackward">
+				</button>
+				<span id="speed">
+					1.0
+				</span>
+				<button id="fastforward">
+				</button>
+			</div>
+
+			<div class="time">
+				<div id="timeline">
+					<div id="marker">
+
+					</div>
+
+					<div id="line">
+
+					</div>
+				</div>
+
+				<div class="timevalue">
+					<span id="frames"></span>
+					<span id="realtime"></span>
+				</div>
+			</div>
+
+		</header>
+
+		<div id="nav">
+			<ul>
+				<li>
+					<a href="">
+						Start
+					</a>
+				</li>
+				<li>
+					<a href="">
+						About
+					</a>
+				</li>
+				<li>
+					<a href="">
+						Simulation
+					</a>
+				</li>
+				<li>
+					<a href="">
+						Imprint
+					</a>
+				</li>
+			</ul>
+		</div>
+
+		<div id="wrapper">
+			<div id="loader">
+				<div class="loader-box"></div>
+			</div>
+		</div>
+
+		<footer>
+			<div class="minimap">
+				<div id="minimap_view"></div>
+			</div>
+
+			<div class="scale">
+				<span id="scale_value">1.00x</span>
+				<img src="../assets//automatauniversalis.stack.svg#zoom">
+			</div>
+		</footer>
+
+		<script>
+			let loc = window.location.pathname;
+			let simulationID = loc.substring(1, loc.lastIndexOf('/'));
+		</script>
+
+		<script src="../js/pixi.min.js"></script>
+		<script src="../js/pixifilters.js"></script>
+		
+		<script src="../js/datascript.js"></script>
+
+		<script src="../js/pixiscript.js"></script>
+		<script src="../js/pixizoom.js"></script>
+		<script src="../js/pixifluidcolor.js"></script>
+		<script src="../js/script.js"></script>
+		<script src="../js/hamburgerscript.js"></script>
+	</body>
+
+</html>

@@ -1,0 +1,110 @@
+[{
+    "state": 1,
+    "gravRadius": 128,
+    "mass": 1,
+    "mergeCount": 1,
+    "reactionCount": 2,
+    "explosionForce": 2,
+    "explosionSize": 4
+  },
+  {
+    "state": 2,
+    "gravRadius": 128,
+    "mass": 0.64,
+    "mergeCount": 1,
+    "reactionCount": 2,
+    "explosionForce": 2,
+    "explosionSize": 4
+  },
+  {
+    "state": 3,
+    "gravRadius": 128,
+    "mass": 0.64,
+    "mergeCount": 2,
+    "reactionCount": 3,
+    "explosionForce": 2,
+    "explosionSize": 4
+  },
+  {
+    "state": 4,
+    "gravRadius": 128,
+    "mass": 0.64,
+    "mergeCount": 2,
+    "reactionCount": 3,
+    "explosionForce": 2,
+    "explosionSize": 4
+  },
+  {
+    "state": 5,
+    "gravRadius": 96,
+    "mass": 0.64,
+    "mergeCount": 3,
+    "reactionCount": 4,
+    "reactionSpeed": 1.4,
+    "explosionForce": 2,
+    "explosionSize": 6
+  },
+  {
+    "state": 6,
+    "gravRadius": 96,
+    "mass": 0.64,
+    "mergeCount": 3,
+    "reactionCount": 4,
+    "explosionForce": 2,
+    "explosionSize": 6
+  },
+  {
+    "state": 7,
+    "gravRadius": 96,
+    "mass": 0.32,
+    "mergeCount": 3,
+    "reactionCount": 4,
+    "explosionForce": 2,
+    "explosionSize": 6
+  },
+  {
+    "state": 8,
+    "gravRadius": 96,
+    "mass": 0.32,
+    "mergeCount": 3,
+    "reactionCount": 4,
+    "explosionForce": 2,
+    "explosionSize": 6
+  },
+  {
+    "state": 9,
+    "gravRadius": 64,
+    "mass": 0.32,
+    "mergeCount": 4,
+    "reactionCount": 5,
+    "explosionForce": 2,
+    "explosionSize": 8
+  },
+  {
+    "state": 10,
+    "gravRadius": 64,
+    "mass": 0.32,
+    "mergeCount": 4,
+    "reactionCount": 5,
+    "explosionForce": 2,
+    "explosionSize": 8
+  },
+  {
+    "state": 11,
+    "gravRadius": 64,
+    "mass": 0.32,
+    "mergeCount": 4,
+    "reactionCount": 5,
+    "explosionForce": 2,
+    "explosionSize": 8
+  },
+  {
+    "state": 12,
+    "gravRadius": 4,
+    "mass": 0.01,
+    "mergeCount": 32,
+    "reactionCount": 0,
+    "explosionForce": 2,
+    "explosionSize": 8
+  }
+]
