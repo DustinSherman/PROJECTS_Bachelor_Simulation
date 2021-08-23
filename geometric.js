@@ -1,15 +1,23 @@
+// PERFORMANCE
+const { GPU } = require('gpu.js');
+const gpu = new GPU();
+
 var math = require("mathjs");
 
+/*
 var geometric = module.exports = {
 	mag : function(_Vector) {
 		return math.sqrt(_Vector[0] * _Vector[0] + _Vector[1] * _Vector[1]);
 	},
 
+	/*
 	setMag : function(_Vector, _Magnitude) {
 		let magPrev = math.sqrt(_Vector[0] * _Vector[0] + _Vector[1] * _Vector[1]);
 
 		return [_Vector[0] * _Magnitude/magPrev, _Vector[1] * _Magnitude/magPrev];
 	},
+	*/
+	/*
 
 	dist: function(_Pos0, _Pos1) {
 		return math.sqrt(math.pow(_Pos1[0] - _Pos0[0], 2) + math.pow(_Pos1[1] - _Pos0[1], 2));
@@ -56,3 +64,16 @@ var geometric = module.exports = {
 		return val;
 	}
 }
+*/
+
+const setMag = gpu.createKernel(function(vector, magnitude) {
+
+	// console.log("Set Mag Function called with " + vector + magnitude);
+
+
+	let magPrev = math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
+
+	return [vector[0] * magnitude/magPrev, vector[1] * magnitude/magPrev];
+}).setOutput([2]);
+
+exports.setMag = setMag;

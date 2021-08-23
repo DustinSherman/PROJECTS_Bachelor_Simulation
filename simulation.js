@@ -14,27 +14,12 @@ const effects = require("./effects.js");
 const data = require("./data.js");
 const log = require("./log.js");
 
-
-
-
-
 // PERFORMANCE
 const { GPU } = require('gpu.js');
 const gpu = new GPU();
-// const cluster = require("cluster");
-// const numCPUs = require("os").cpus().length;
-
-
-
 
 // VARIABLES
-// 8m / 24 fps => 11520
-// 9m / 24 fps => 12960
 // 10m / 24 fps => 14400
-// 11m / 24fps => 15840
-// 12m / 24fps => 17280
-// 13m / 24fps => 18720
-// 13.30 m / 24 fps => 19440
 // 15m / 24 fps => 21600
 
 let simulate = false;
@@ -88,15 +73,6 @@ exports.caFreq = caFreq;
 exports.fluidQuadtreeCapacity = fluidQuadtreeCapacity;
 
 // Timing
-// 5m / 24 fps => 7200
-// 6m / 24 fps => 8640
-// 8m / 24 fps => 11520
-// 9m / 24 fps => 12960
-// 10m / 24 fps => 14400
-// 11m / 24fps => 15840
-// 12m / 24fps => 17280
-// 13.30 m / 24 fps => 19440
-// 15m / 24 fps => 21600
 exports.timeEnd = timeEnd;
 let realtimeStart = Date.now();
 exports.realtimeStart = realtimeStart;
@@ -163,6 +139,12 @@ let caCurrentRule = caRules.rules.length - 1;
 // ////////////////////////////// SETUP
 
 function setup() {
+
+	console.log(gpuSqrt([3768]));
+
+
+
+
 	// PARTICLES
 	effects.explosionSetup();
 
@@ -202,6 +184,26 @@ function setup() {
 }
 
 exports.setup = setup;
+
+
+
+
+
+
+
+
+
+const gpuSqrt = gpu.createKernel(function(x) {
+	let result = math.sqrt(x[0]);
+
+	return result;
+}).setOutput([100]);
+
+
+
+
+
+
 
 function startPosition() {
 	startStateVals = [];
