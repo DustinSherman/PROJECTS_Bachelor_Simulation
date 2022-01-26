@@ -6,13 +6,21 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 		<title></title>
 
-	<link rel="stylesheet" type="text/css" href="../style/hamburgers.css">
-	<link rel="stylesheet" type="text/css" href="../style/style.css">
+		<!-- Favicons -->
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+		<link rel="icon" type="image/png" sizes="192x192"  href="/android-chrome-192x192.png">
+		<link rel="icon" type="image/png" sizes="512x512"  href="/android-chrome-512x512.png">
+		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+		<meta name="msapplication-TileColor" content="#ffffff">
+
+		<link rel="stylesheet" type="text/css" href="../style/hamburgers.css">
+		<link rel="stylesheet" type="text/css" href="../style/style.min.css">
 
 	</head>
 
 	<body class="loading">
-		<header>
+		<header id="header">
 			<div class="hamburger hamburger--squeeze" id="hamburger">
 				<div class="hamburger-box">
 					<div class="hamburger-inner"></div>
@@ -27,7 +35,7 @@
 					Iteration
 				</span>
 				<span id="date">
-					Initialisiert
+					<span class="datetext">Initialisiert</span>
 				</span>
 			</div>
 
@@ -65,6 +73,10 @@
 
 		</header>
 
+		<div id="closeheader">
+			
+		</div>
+
 		<div id="nav">
 			<ul>
 				<li>
@@ -91,8 +103,20 @@
 		</div>
 
 		<div id="wrapper">
+			<div id="loading-circle-box">
+				<div id="loading-circle">
+					<svg height="200" width="200">
+						  <circle cx="100" cy="100" r="90" />
+					</svg>
+				</div>
+			</div>
 			<div id="loader">
 				<div class="loader-box"></div>
+			</div>
+
+			<div id="remainingtime">
+				<p>Your simulation should be finished around</p>
+				<span></span>
 			</div>
 		</div>
 
@@ -103,13 +127,33 @@
 
 			<div class="scale">
 				<span id="scale_value">1.00x</span>
-				<img src="../assets//automatauniversalis.stack.svg#zoom">
+				<img src="../assets/automatauniversalis.stack.svg#zoom">
+			</div>
+
+			<div id="fullscreen">
 			</div>
 		</footer>
 
 		<script>
 			let loc = window.location.pathname;
 			let simulationID = loc.substring(1, loc.lastIndexOf('/'));
+
+			// Check if simulation is yet finished
+			let tmpUrl = 'log/record_' + simulationID + '.txt';
+			var xhr = new XMLHttpRequest();
+			xhr.open('HEAD', tmpUrl, false);
+			xhr.send();
+
+			let simulationReady = false;
+			
+			let loaderElement = document.getElementById('loader');
+
+			if (xhr.status == "404") {
+				console.log("Simulation unfinished");
+			} else {
+				loaderElement.style.display = 'flex';
+				simulationReady = true;
+			}
 		</script>
 
 		<script src="../js/pixi.min.js"></script>
@@ -122,6 +166,7 @@
 		<script src="../js/pixifluidcolor.js"></script>
 		<script src="../js/script.js"></script>
 		<script src="../js/hamburgerscript.js"></script>
+		<script src="../js/fullscreen.js"></script>
 	</body>
 
 </html>

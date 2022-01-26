@@ -32,7 +32,8 @@ let fluidMovementVelocity = [6, 2];
 let fluidMovementSize = [10, 3];
 let fluidExplosionSize = [32, 8];
 let fluidExplosionStrength = [8, 3];
-let cellularAutomataSize = [16, 4];
+let cellularAutomataSize = [20, 12];
+let lineTrailDuration = [32, 12];
 
 exports.multiRange = multiRange;
 exports.fluidMovementVelocity = fluidMovementVelocity;
@@ -48,10 +49,18 @@ let nearParticleCountThreshold = 16;
 exports.nearParticleRadius = nearParticleRadius;
 exports.nearParticleCountThreshold = nearParticleCountThreshold;
 
+// Swirl Variables
+let swirlIntializeRadius = 128;
+let swirlVelocityMaxAbsReduceBase = .018;
+let swirlRadiusBase = 256;
+
+exports.swirlVelocityMaxAbsReduceBase = swirlVelocityMaxAbsReduceBase;
+exports.swirlRadiusBase = swirlRadiusBase;
+
 class Particle {
 	constructor(pos, velocity, state, akin, id) {
-		this.pos = [pos[0], pos[1]];
-		this.velocity = [velocity[0], velocity[1]];
+		this.pos = [round(pos[0]), round(pos[1])];
+		this.velocity = [round(velocity[0]), round(velocity[1])];
 		this.acceleration = [0, 0];
 
 		this.id = id;
@@ -109,8 +118,26 @@ class Particle {
 		this.tmpParticles = [];
 		this.tmpCalcParticles = [];
 
-		// Value is never used, it originates from perfomance boost for the fluidParticleQuadtree
-		this.unchanged = false;
+		this.swirlVelocityMaxAbsReduceCalced = false;
+		this.swirlSet = false;
+		this.swirlRadius;
+		this.swirlVelocityMaxAbsReduce;
+
+		// Logging
+		/*
+		if (this.id % 100 == 0) {
+			this.log = true;
+		} else {
+			this.log = false;
+		}
+		*/
+		this.log = false;
+		this.record = [];
+
+		if (this.log) {
+			let logStart = "New Particle " + this.id + " at pos (" + this.pos[0] + ", " + this.pos[1] + "), state " + this.state + ", akin " + this.akin + ", polarity " + this.polarity;
+			this.record.push(logStart);
+		}
 	}
 
 	updateVals() {
@@ -121,7 +148,7 @@ class Particle {
 		if (math.abs(this.state) >= simulation.stateMax) {
 			// If a particle is stateMax add stateMax-1 and stateMax-2 to merge List, so it can merge with many different types
 			this.calcTypes.push(this.state);
-			
+
 			let multi = 1 ? -1 : this.state > 0;
 			this.calcTypes.push(Math.abs(this.state - 1) * multi);
 			this.calcTypes.push(Math.abs(this.state - 2) * multi);
@@ -142,6 +169,10 @@ class Particle {
 	// ////////////////////////////// MOVE //////////////////////////////
 
 	move() {
+		/*
+			Actual movement
+		*/
+
 		this.velocity = geometric.add(this.velocity, this.acceleration);
 
 		if (geometric.mag(this.velocity) > this.velocityMaxAbs) {
@@ -168,8 +199,14 @@ class Particle {
 		}
 	}
 
-	addAcceleration(acceleration) {
+	addAcceleration(acceleration, source) {
 		this.acceleration = [this.acceleration[0] + acceleration[0], this.acceleration[1] + acceleration[1]];
+
+		// UNCOMMENT to log source of acceleration add
+		if (this.log) {
+			let string = "\r\n" + "       " + "New acceleration from " + source + " acceleration (" + acceleration[0] + ", " + acceleration[1] + ")";
+			this.record.push(string);
+		}
 	}
 
 	// ////////////////////////////// CALC GRAVITATION //////////////////////////////
@@ -184,27 +221,28 @@ class Particle {
 		this.tmpParticles.forEach(function (tmpParticle) {
 			if (self != tmpParticle && !tmpParticle.merged) {
 				// When Particle is in Range
-				if (geometric.dist(self.pos, tmpParticle.pos) <= self.gravRadius) {
+				if (geometric.dist(self.pos, tmpParticle.pos) < self.gravRadius) {
 					// When Particle isnt in the same spot
-					if (geometric.dist(self.pos, tmpParticle.pos) >= 1) {
-						tmpParticle.setGravDir(self.pos, self.mass);
+					if (geometric.dist(self.pos, tmpParticle.pos) > 1) {
+						tmpParticle.setGravDir(self.pos, self.mass, self.id);
 					}
 				}
 			}
 		})
 	}
 
-	setGravDir(_OriginPos, _OriginMass) {
-		let gravDir = geometric.sub(this.pos, _OriginPos);
-		let distance = geometric.dist(_OriginPos, this.pos);
+	setGravDir(originPos, originMass, originId) {
+		let gravDir = geometric.sub(this.pos, originPos);
+		let distance = geometric.dist(originPos, this.pos);
 		distance = math.max(1, distance);
 
-		let force = (simulation.gravConstant * this.mass * _OriginMass) / (distance * distance);
+		let force = (simulation.gravConstant * this.mass * originMass) / (distance * distance);
 
 		let gravForce = geometric.setMag(gravDir, force);
 		gravForce = geometric.div(gravForce, this.mass);
 
-		this.acceleration = geometric.add(this.acceleration, gravForce);
+		// this.acceleration = geometric.add(this.acceleration, gravForce);
+		this.addAcceleration(gravForce, " gravitation id " + originId + " pos (" + originPos[0] + ", " + originPos[1] + ") force " + force);
 	}
 
 	// ////////////////////////////// CALC MERGE / REACTION //////////////////////////////
@@ -220,7 +258,7 @@ class Particle {
 		this.mergedParticles.forEach(function (mergedParticle) {
 			self.tmpCalcParticles.push(mergedParticle);
 		})
-		
+
 		this.tmpParticles.forEach(function (tmpParticle) {
 			// The particle shouldnt be merged (will be added later), shouldnt be allready calculated and shouldnt be itself (allready added)
 			if (!tmpParticle.merged && !tmpParticle.calced && tmpParticle != self) {
@@ -264,12 +302,12 @@ class Particle {
 					center = [this.tmpCalcParticles[i].pos[0], this.tmpCalcParticles[i].pos[1]];
 				} else {
 					let tmpTorusPos = [0, 0];
-					let tmpCenter = [center[0]/(i + 1),  center[1]/(i + 1)];
+					let tmpCenter = [center[0] / (i + 1), center[1] / (i + 1)];
 
 					// Move position to a torus Position if its on the other side
 					for (let j = 0; j < 2; j++) {
-						if (Math.abs(this.tmpCalcParticles[i].pos[j] - tmpCenter[j]) > simulation.fieldWidth/2) {
-							let torusShift = this.tmpCalcParticles[i].pos[j] >= simulation.fieldWidth/2 ? -simulation.fieldWidth : simulation.fieldWidth;
+						if (Math.abs(this.tmpCalcParticles[i].pos[j] - tmpCenter[j]) > simulation.fieldWidth / 2) {
+							let torusShift = this.tmpCalcParticles[i].pos[j] >= simulation.fieldWidth / 2 ? -simulation.fieldWidth : simulation.fieldWidth;
 							tmpTorusPos[j] = this.tmpCalcParticles[i].pos[j] + torusShift;
 						} else {
 							tmpTorusPos[j] = this.tmpCalcParticles[i].pos[j];
@@ -279,7 +317,8 @@ class Particle {
 					center = [center[0] + tmpTorusPos[0], center[1] + tmpTorusPos[1]];
 				}
 			}
-			center = [center[0]/this.tmpCalcParticles.length, center[1]/this.tmpCalcParticles.length];
+			center = [center[0] / this.tmpCalcParticles.length, center[1] / this.tmpCalcParticles.length];
+			center = roundArray(center);
 
 			// UNCOMMENT to log Reaction
 			if (simulation.logData) {
@@ -291,13 +330,13 @@ class Particle {
 			// Reaction Explosion
 			/*
 				If a reaction is triggered, no mather what kind of reaction, an explosion is startetd at the center of the reaction to add dynamic to the particle simulation 
-				and to move the particles further apart from each other. The force and size of the explosion is also muliplied by the number of the surrounding particles.
+				and to move the particles further apart from each other. The force and size of the explosion is also multiplied by the number of the surrounding particles.
 
 				If there are more than 16 particles, then the multiplier is (1 + (nearParticleCount - 16)/2) * abs(state)/2;
 			*/
 
 			let tmpExplosionForce = this.explosionForce * math.max(this.tmpCalcParticles.length / 2.0, 1);
-			let tmpExplosionSize = math.floor(this.explosionSize * math.max(this.tmpCalcParticles.length / 2.0, 1));
+			let tmpExplosionSize = math.floor(this.explosionSize * math.max(this.tmpCalcParticles.length / 4.0, 1));
 
 			let nearParticles = simulation.tree.contentParticles(center, nearParticleRadius, 0);
 			let nearParticleCount = nearParticles.length;
@@ -311,6 +350,8 @@ class Particle {
 				tmpExplosionSize = Math.floor(tmpExplosionSize * multiplicator);
 			}
 
+			tmpExplosionSize = geometric.constrain(tmpExplosionSize, effects.explosionMinSize, effects.explosionMaxSize);
+			tmpExplosionForce = geometric.constrain(tmpExplosionForce, effects.explosionMinForce, effects.explosionMaxForce);
 
 			simulation.explosions.push(new effects.explosion(center, tmpExplosionSize, tmpExplosionForce, 0));
 
@@ -321,7 +362,7 @@ class Particle {
 			if (simulation.logData) {
 				log.logMerge(this);
 			}
-			
+
 			this.mergeFunc();
 		}
 	}
@@ -362,7 +403,12 @@ class Particle {
 			The akin value for the new particle is the akin value of the current calc particle + 1.
 		*/
 		for (let i = 0; i < this.tmpCalcParticles.length; i++) {
-			this.tmpCalcParticles[i].velocity = tmpVelocity;
+			this.tmpCalcParticles[i].velocity = [tmpVelocity[0], tmpVelocity[1]];
+			this.tmpCalcParticles[i].pos = [center[0] + tmpVelocity[0], center[1] + tmpVelocity[1]];
+
+			if (this.log) {
+				this.tmpCalcParticles[i].addToRecord("\r\n" + "       " + " Set Velocity by Reaction to (" + tmpVelocity[0] + ", " + tmpVelocity[1] + ")");
+			}
 
 			// Add Particle Coord + velocity to array
 			resultParticleCoords.push([this.tmpCalcParticles[i].pos[0] + this.tmpCalcParticles[i].velocity[0], this.tmpCalcParticles[i].pos[1] + this.tmpCalcParticles[i].velocity[1]]);
@@ -375,15 +421,15 @@ class Particle {
 				// Set polarity to the same of the reactions state
 				this.tmpCalcParticles[i].polarity = this.state > 0 ? 1 : -1;
 
-				simulation.particles.push(new Particle([this.tmpCalcParticles[i].pos[0], this.tmpCalcParticles[i].pos[1]], tmpVelocity, this.tmpCalcParticles[i].state, this.tmpCalcParticles[i].akin + 1, simulation.particles.length));
-			
+				simulation.particles.push(new Particle([center[0] + tmpVelocity[0], center[1] + tmpVelocity[1]], [tmpVelocity[0], tmpVelocity[1]], this.tmpCalcParticles[i].state, this.tmpCalcParticles[i].akin + 1, simulation.particles.length));
+
 				// Add Particle Coord + velocity to array
 				resultParticleCoords.push([simulation.particles[simulation.particles.length - 1].pos[0] + simulation.particles[simulation.particles.length - 1].velocity[0], simulation.particles[simulation.particles.length - 1].pos[1] + simulation.particles[simulation.particles.length - 1].velocity[1]]);
 			} else {
 				// Set polarity to opposite of the reactions state
 				this.tmpCalcParticles[i].polarity = this.state > 0 ? -1 : 1;
 			}
-			
+
 			this.tmpCalcParticles[i].updateVals();
 
 			tmpVelocity = geometric.rotate(tmpVelocity, (math.pi * 2) / math.floor(this.tmpCalcParticles.length * 1.5));
@@ -415,7 +461,7 @@ class Particle {
 		if (reactionResult != undefined) {
 			let multiArray = [.2, .4, 2, 3, 4, 5, 6, 7, 6, 4, 2, 0];
 			let multi = multiArray[Math.abs(this.state) - 1];
-			
+
 			if (Math.abs(this.state) > 2) {
 				multi -= lowestAkin;
 				multi += (this.tmpCalcParticles.length - this.reactionCount);
@@ -427,7 +473,7 @@ class Particle {
 				let velocity = (fluidMovementVelocity[0] * Math.min(multi, 1)) + multi * fluidMovementVelocity[1];
 				let size = (fluidMovementVelocity[0] * Math.min(multi, 1)) + multi * fluidMovementSize[1];
 
-				this.setFluidMovement(center, velocity, size, tmpVelocity, Math.ceil((binaryResult + 1)/4));
+				this.setFluidMovement(center, velocity, size, tmpVelocity, Math.ceil((binaryResult + 1) / 4));
 			} else if (reactionResult == 1) {
 				let size = fluidExplosionSize[0] + multi * fluidExplosionSize[1];
 				let strength = fluidExplosionStrength[0] + multi * fluidExplosionStrength[1];
@@ -435,12 +481,12 @@ class Particle {
 				this.setFluidExplosion(center, size, strength);
 			} else if (reactionResult == 2) {
 				let form = 1;
-				let size = cellularAutomataSize[0] + multi * cellularAutomataSize[1];
+				let size = Math.round(cellularAutomataSize[0] + multi * Math.max(simulation.timePassed/simulation.timeSteps, .2) * cellularAutomataSize[1]);
 
 				this.setCellularAutomata(center, size, form, binaryResult);
-			}  else if (reactionResult == 3) {
+			} else if (reactionResult == 3) {
 				let size = Math.floor(multi * .6875);
-				let duration = 24 + binaryResult * 20;
+				let duration = lineTrailDuration[0] + binaryResult * lineTrailDuration[1];
 
 				this.setLineTrails(center, size, duration);
 			}
@@ -455,12 +501,16 @@ class Particle {
 		if (this.tmpCalcParticles.length > this.reactionCount) {
 			let shockwaveMulti = [32, 28, 24, 20, 16, 15, 14, 13, 12, 11, 10, 0];
 
-			effects.setShockwave(this.pos, shockwaveMulti[Math.abs(this.state)]);
+			let shockWaveStrength = shockwaveMulti[Math.abs(this.state)];
+
+			log.logShockwave(this.pos, shockWaveStrength)
+
+			effects.setShockwave(this.pos, shockWaveStrength);
 		}
-		
+
 		this.setFluidCellPolarity(center);
 	}
-	
+
 	mergeFunc() {
 		let self = this;
 
@@ -506,24 +556,24 @@ class Particle {
 		if (simulation.simulateFluidCells) {
 			let radius = 48;
 
-			radius = Math.floor(radius/simulation.fluidCellResolution);
-	
-			let fluidCellCenter = [Math.floor(center[0]/simulation.fluidCellResolution), Math.floor(center[1]/simulation.fluidCellResolution)];
-	
+			radius = Math.floor(radius / simulation.fluidCellResolution);
+
+			let fluidCellCenter = [Math.floor(center[0] / simulation.fluidCellResolution), Math.floor(center[1] / simulation.fluidCellResolution)];
+
 			for (let i = fluidCellCenter[0] - radius; i <= fluidCellCenter[0] + radius; i++) {
 				for (let j = fluidCellCenter[1] - radius; j <= fluidCellCenter[1] + radius; j++) {
-	
-					let dist = geometric.dist([i, j], [fluidCellCenter[0], fluidCellCenter[1]]);
-					if (dist <= radius) {
-						let index = fluid.getFluidCellTorus(i) + fluid.getFluidCellTorus(j) * (simulation.fieldWidth/simulation.fluidCellResolution);
+
+					// let dist = geometric.dist([i, j], [fluidCellCenter[0], fluidCellCenter[1]]);
+					if (geometric.dist([i, j], [fluidCellCenter[0], fluidCellCenter[1]]) < radius) {
+						let index = fluid.getFluidCellTorus(i) + fluid.getFluidCellTorus(j) * (simulation.fieldWidth / simulation.fluidCellResolution);
 						/*
 						let val = radius - Math.floor(dist);
 						val = this.state > 0 ? val : -val;
 						*/
-	
+
 						let val = this.state > 0 ? 1 : -1;
-						val = val * Math.floor((Math.abs(this.state) - 1)/2);
-	
+						val = val * Math.floor((Math.abs(this.state) - 1) / 2);
+
 						fluid.changeFluidCellPolarity(index, val);
 					}
 				}
@@ -538,7 +588,6 @@ class Particle {
 		let ruleIndex = caRules.rules.length - 1 - simulation.tree.contentParticles(center, caRuleParticleRadius, 0).length - this.tmpCalcParticles.length;
 		ruleIndex = Math.max(ruleIndex, 0);
 
-
 		// UNCOMMENT to log new cellular Automata
 		if (simulation.logData) {
 			log.logCA(center, size, ruleIndex, neighbourhood, form);
@@ -550,7 +599,7 @@ class Particle {
 		cellularAutomata.setNeighbourhood(center, size, form, neighbourhood);
 
 		// Animate
-		size = Math.floor(size/8);
+		size = Math.floor(size / 8);
 		cellularAutomata.animate(center, size, form);
 	}
 
@@ -565,6 +614,127 @@ class Particle {
 		effects.setLineTrails(center, size, duration);
 	}
 
+	// ////////////////////////////// Swirls
+
+	/*
+		If in the balancephase the particle is still a state 1/-1 particle it will slow down and cause a swirl when it has completly stopped.
+		Particles with polarity 1 will affect normal particles, polarity -1 will affects fluid particles.
+	*/
+
+	checkSwirl() {
+		/*
+			If in Phase 1 (Balancephase) the particle state is 1/-1, then moveMaxAbs decreases till the particle stops. It then creates a swirl around him
+		*/
+
+		// Calculate in the beginnning the velocityReduce for the particle
+		if (!this.swirlVelocityMaxAbsReduceCalced) {
+			let closeParticleCount = simulation.tree.contentParticles(this.pos, swirlIntializeRadius, 0).length;
+			this.swirlVelocityMaxAbsReduce = swirlVelocityMaxAbsReduceBase/closeParticleCount;
+
+			this.swirlVelocityMaxAbsReduceCalced = true;
+		}
+
+		if (this.velocityMaxAbs > 0) {
+			// Slow particle down
+			this.velocityMaxAbs -= this.swirlVelocityMaxAbsReduce;
+		} else {
+			this.velocityMaxAbs = 0;
+			// If particle stopped calculate the radius of the swirl once
+			if (!this.swirlSet) {
+				let closeParticleCount = simulation.tree.contentParticles(this.pos, swirlIntializeRadius, 0).length;
+				this.swirlRadius = (swirlRadiusBase/6) + Math.round((swirlRadiusBase/2)/(Math.floor(closeParticleCount/4)));
+
+				let type = this.state > 0 ? 'particles' : 'fluid particles';
+
+				// If swirlRadius affects fluidParticles divide radius
+				if (type == 'fluid particles') {
+					this.swirlRadius /= 2;
+				}
+
+				// UNCOMMENT to log all swirls
+				log.logSwirl(this.pos, this.swirlRadius, this.state, type);
+
+				type = this.state > 0 ? 1 : 0;
+				simulation.swirls.push(new effects.swirl(this.pos, this.swirlRadius, this.state, type))
+
+				this.swirlSet = true;
+			}
+		}
+	}
+
+	/*
+	setSwirl(center, radius, direction) {
+		let tmpParticles = [];
+
+		if (this.state > 0) {
+			tmpParticles = simulation.tree.contentParticles(center, radius, 0);
+		} else {
+			tmpParticles = simulation.fluidTree.contentParticles(center, radius, 0);
+		}
+
+		let self = this;
+
+		tmpParticles.forEach(function (tmpParticle) {
+			if (!tmpParticle.merged && tmpParticle != self) {
+				let tmpSwirlPos = [center[0], center[1]];
+
+				if (tmpParticle.pos[0] - center[0] > simulation.fieldWidth / 2) {
+					// Fluid Particle is over the left border
+					tmpSwirlPos[0] += simulation.fieldWidth;
+				} else if (tmpParticle.pos[0] - center[0] < -simulation.fieldWidth / 2) {
+					// Fluid Particle is over right border
+					tmpSwirlPos[0] -= simulation.fieldWidth;
+				}
+
+				if (tmpParticle.pos[1] - center[1] > simulation.fieldWidth / 2) {
+					// Fluid Particle is over the top border
+					tmpSwirlPos[1] += simulation.fieldWidth;
+				} else if (tmpParticle.pos[1] - center[1] < -simulation.fieldWidth / 2) {
+					// Fluid Particle is over bottom border
+					tmpSwirlPos[1] -= simulation.fieldWidth;
+				}
+
+				let accelercationDir = [tmpParticle.pos[0] - tmpSwirlPos[0], tmpParticle.pos[1] - tmpSwirlPos[1]];
+
+				let distance = geometric.mag(accelercationDir);
+
+				accelercationDir = geometric.rotate(accelercationDir, Math.PI/2 * direction);
+				accelercationDir = geometric.setMag(accelercationDir, swirlForceBase/distance);
+
+				if (self.log) {
+					tmpParticle.addAcceleration(accelercationDir, "Swirl from particle " + self.id + " at pos (" + self.pos[0] + ", " + self.pos[1] + ")");
+				}
+			}
+		});
+	}
+	*/
+
+	addToRecord(string) {
+		this.record.push(string);
+	}
+
+	saveLog() {
+		let string = "\r\n" + pad(simulation.timePassed, 6) + " Current pos (" + this.pos[0] + ", " + this.pos[1] + "), MoveDir (" + this.velocity[0] + ", " + this.velocity[1] + ")";
+		this.record.push(string);
+
+		string = " Current state " + this.state + ", akin " + this.akin + ", polarity " + this.polarity;
+		if (this.merged) {
+			string += ", Merged";
+		}
+		this.record.push(string);
+
+		if (this.mergedParticles.length > 0) {
+			string = "\r\n" + "       " + " Merged Particles ";
+
+			this.mergedParticles.forEach(function (mergeParticle) {
+				string += "#" + mergeParticle.id + ", ";
+			})
+			this.record.push(string);
+		}
+
+		log.saveFile("particle_" + pad(this.id, 5) + ".txt", this.record);
+	}
+
 	reset() {
 		this.reaction = false;
 		this.merge = false;
@@ -577,10 +747,10 @@ module.exports = Particle
 function getTorus(val) {
 	let fieldWidth = simulation.fieldWidth;
 
-	while (val < 0) {
+	if (val < 0) {
 		val += fieldWidth;
 	}
-	while (val >= fieldWidth) {
+	if (val >= fieldWidth) {
 		val -= fieldWidth;
 	}
 
@@ -589,6 +759,20 @@ function getTorus(val) {
 
 // Add leading zeros
 function pad(num, size) {
-    var s = "000000000" + num;
-    return s.substr(s.length - size);
+	var s = "000000000" + num;
+	return s.substr(s.length - size);
+}
+
+function round(val) {
+	return Math.round(val * simulation.calcDecimalsMultiplier) / simulation.calcDecimalsMultiplier;
+}
+
+function roundArray(array) {
+	let resultArray = [];
+
+	array.forEach(function (element) {
+		resultArray.push(Math.round(element * simulation.calcDecimalsMultiplier) / simulation.calcDecimalsMultiplier);
+	})
+
+	return resultArray;
 }

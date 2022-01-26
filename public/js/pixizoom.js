@@ -16,7 +16,7 @@ el.onmousedown = function(event) {
     lastPos = {x: event.offsetX, y: event.offsetY};
 }
 
-el.onmouseup = function(event) {
+el.onmouseup = function() {
     lastPos = null;
 }
 
@@ -37,27 +37,56 @@ function zoom(s, x, y) {
     newScale = {x: Math.max(Math.min(app.stage.scale.x * s, maxScale), minScale), y: Math.max(Math.min(app.stage.scale.y * s, maxScale), minScale)};
     
     var newScreenPos = {x: (worldPos.x ) * newScale.x + app.stage.x, y: (worldPos.y) * newScale.y + app.stage.y};
-  
-    changePos({x: app.stage.x - (newScreenPos.x - x), y: app.stage.y - (newScreenPos.y - y)});
+
     app.stage.scale.x = newScale.x;
     app.stage.scale.y = newScale.y;
+    changePos({x: app.stage.x - (newScreenPos.x - x), y: app.stage.y - (newScreenPos.y - y)});
 
     scaleSpan.innerHTML = newScale.x.toFixed(2) + "x";
 };
 
 function changePos(pos) {
-    let minPos = -fieldWidth * (newScale.x - 1);
-    let maxPos = 0;
+    let minX, minY, maxX, maxY;
 
-    app.stage.x = Math.max(Math.min(pos.x, maxPos), minPos);
-    app.stage.y = Math.max(Math.min(pos.y, maxPos), minPos);
+    if (app.stage.width >= innerWidth) {
+        minX = -((app.screen.width * newScale.x) - app.stage.width)/2;
+        maxX = -((app.screen.width * newScale.x) - app.stage.width)/2 - (app.stage.width - app.screen.width)
+
+        pos.x = Math.max(Math.min(pos.x, minX), maxX);
+    } else {
+        minX = ((app.screen.width * newScale.x) - app.stage.width)/2;
+        maxX = -((app.screen.width * newScale.x) - app.stage.width)/2;
+
+        pos.x = Math.max(Math.min(pos.x, minX), maxX);
+    }
+
+    if (app.stage.height >= app.screen.height) {
+        minY = -((app.screen.height * newScale.y) - app.stage.height)/2;
+        maxY = -((app.screen.height * newScale.y) - app.stage.height)/2 - (app.stage.height - app.screen.height)
+
+        pos.y = Math.max(Math.min(pos.y, minY), maxY);
+    } else {
+        minY = 0;
+        maxY = 0;
+
+        pos.y = 0;
+    }
+
+    app.stage.x = pos.x;
+    app.stage.y = pos.y;
 
     let minimapView = 50;
 
-    minimapDiv.style.width = minimapView/newScale.x + "px";
-    minimapDiv.style.height = minimapView/newScale.y + "px";
+    minimapDiv.style.width = Math.min((minimapView/newScale.x) * app.screen.width/app.screen.height, minimapView) + "px";
+    minimapDiv.style.height = (minimapView/newScale.y) + "px";
 
     let relativeMinimapSize = minimapView/newScale.x;
 
-    minimapDiv.style.margin = ((-app.stage.y/fieldWidth) * relativeMinimapSize) + "px 0 0 " + ((-app.stage.x/fieldWidth) * relativeMinimapSize) + "px";
+    let marginTop = ((minY - app.stage.y)/app.stage.height) * minimapView;
+    let marginLeft = 0;
+    if (app.stage.width >= app.screen.width) {
+        marginLeft = ((minX - app.stage.x)/app.stage.width) * minimapView;
+    }
+
+    minimapDiv.style.margin = marginTop + "px 0 0 " + marginLeft + "px";
 }

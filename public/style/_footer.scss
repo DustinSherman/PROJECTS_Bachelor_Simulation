@@ -1,5 +1,5 @@
 footer {
-    position: relative;
+    position: fixed;
     bottom: 0;
     width: 100%;
 
@@ -21,8 +21,8 @@ footer {
 
     .scale {
         position: absolute;
-        right: 10px;
-        bottom: 10px;
+        right: 40px;
+        bottom: 6px;
 
         #scale_value {
             height: 20px;
@@ -36,6 +36,33 @@ footer {
         img {
             width: 20px;
             height: auto;
+        }
+    }
+
+    #fullscreen {
+        position: absolute;
+        right: 10px;
+        bottom: 10px;
+        width: 20px;
+        height: 20px;
+        background: url('../assets/automatauniversalis.stack.svg#fullscreen');
+        background-size: contain;
+
+        &:hover {
+            cursor: pointer;
+        }
+
+        img {
+            width: 20px;
+            height: auto;
+        }
+    }
+}
+
+body.fullscreen {
+    footer {
+        #fullscreen {
+            background: url('../assets/automatauniversalis.stack.svg#nofullscreen');
         }
     }
 }

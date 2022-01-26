@@ -15,21 +15,20 @@ function addDataToHTML() {
 
 function updateTime(time) {
     // Marker
-    let timelineWidth = document.getElementById('line').offsetWidth;
-    let position = (timelineWidth / timeEnd) * time;
+    let position = (time/timeEnd) * 100;
     let markerElement = document.getElementById('marker');
-    markerElement.style.left = position + 'px';
+    markerElement.style.left = position + '%';
 
     // Text
     let framesElement = document.getElementById('frames');
     framesElement.innerHTML = timePassed + " / " + timeEnd;
 
     let realTimeElement = document.getElementById('realtime');
-    let realTimeString = pad(Math.floor((timePassed/fps)/60), 2);
-    realTimeString += ":" + pad(Math.floor((timePassed/fps) % 60), 2);
+    let realTimeString = pad(Math.floor((timePassed / fps) / 60), 2);
+    realTimeString += ":" + pad(Math.floor((timePassed / fps) % 60), 2);
     realTimeString += " / ";
-    realTimeString += pad(Math.floor((timeEnd/fps)/60), 2);
-    realTimeString += ":" + pad(Math.floor((timeEnd/fps) % 60), 2);
+    realTimeString += pad(Math.floor((timeEnd / fps) / 60), 2);
+    realTimeString += ":" + pad(Math.floor((timeEnd / fps) % 60), 2);
 
     realTimeElement.innerHTML = realTimeString;
 }
@@ -37,7 +36,10 @@ function updateTime(time) {
 let lineElement = document.getElementById('line');
 
 lineElement.addEventListener("click", function (event) {
+    play = false;
+
     document.body.classList.add("loading");
+    loaderElement.style.display = 'flex';
 
     let timelineElement = document.getElementById('timeline');
 
@@ -48,9 +50,15 @@ lineElement.addEventListener("click", function (event) {
 
     let newTime = timeEnd * (position / timelineWidth);
 
+    loadProgress = 0;
+
     timePassed = Math.round(newTime);
 
-    setTimeout(reset, 500);
+    let lastSaveAllIndex = Math.floor(timePassed / saveAllFreq) * (saveAllFreq / saveFreq);
+
+    setTimeout(function() {
+        reset(lastSaveAllIndex)
+    }, 500);
 
     updateTime(timePassed);
 
@@ -69,7 +77,7 @@ playpauseElement.addEventListener("click", function () {
 let speedElement = document.getElementById('speed');
 
 let fasterElement = document.getElementById('fastforward');
-fasterElement.addEventListener("click", function() {
+fasterElement.addEventListener("click", function () {
     if (speed < 2) {
         speed += .25;
         speedElement.innerHTML = speed.toFixed(2);
@@ -77,18 +85,59 @@ fasterElement.addEventListener("click", function() {
 })
 
 let slowerElement = document.getElementById('fastbackward');
-slowerElement.addEventListener("click", function() {
+slowerElement.addEventListener("click", function () {
     if (speed > .5) {
         speed -= .25;
         speedElement.innerHTML = speed.toFixed(2);
     }
 })
 
+let fullscreenElement = document.getElementById('fullscreen');
+fullscreenElement.addEventListener("click", function () {
+    if (isFullScreenCurrently()) {
+        goOutFullscreen();
+        document.body.classList.remove('fullscreen');
+    } else {
+        goInFullscreen(document.body);
+        document.body.classList.add('fullscreen');
+    }
+
+    setTimeout(() => {
+        resize();
+    }, 5000);
+})
+
+let closeheaderElement = document.getElementById('closeheader');
+let headerElement = document.getElementById('header');
+closeheaderElement.addEventListener("click", function () {
+    if (headerElement.classList.contains('closed')) {
+        headerElement.classList.remove('closed');
+        this.classList.remove('closed');
+        headerElement.style.marginTop = "-1px";
+
+        resize();
+    } else {
+        headerElement.classList.add('closed');
+        this.classList.add('closed');
+
+        let headerHeight = headerElement.offsetHeight;
+        headerElement.style.marginTop = "-" + headerHeight + "px";
+
+        resizeCanvas();
+
+        /*
+        setTimeout(() => {
+            resizeCanvas(5);
+        }, 500);
+        */
+    }
+})
+
 // ////////////////////////////// USEFUL FUNCTIONS
 
-function getDistance(_Pos0, _Pos1) {
-    let distX = (_Pos0[0] - _Pos1[0]);
-    let distY = (_Pos0[1] - _Pos1[1])
+function getDistance(pos0, pos1) {
+    let distX = (pos0[0] - pos1[0]);
+    let distY = (pos0[1] - pos1[1]);
 
     return Math.sqrt(distX * distX + distY * distY);
 }

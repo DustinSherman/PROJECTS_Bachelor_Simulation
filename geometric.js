@@ -1,58 +1,127 @@
 var math = require("mathjs");
+const simulation = require("./simulation.js");
 
 var geometric = module.exports = {
-	mag : function(_Vector) {
-		return math.sqrt(_Vector[0] * _Vector[0] + _Vector[1] * _Vector[1]);
+	mag: function (vector) {
+		let result = math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
+
+		result = round(result);
+
+		return result;
 	},
 
-	setMag : function(_Vector, _Magnitude) {
-		let magPrev = math.sqrt(_Vector[0] * _Vector[0] + _Vector[1] * _Vector[1]);
+	setMag: function (vector, mag) {
+		let magPrev = math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
 
-		return [_Vector[0] * _Magnitude/magPrev, _Vector[1] * _Magnitude/magPrev];
+		let result;
+		if (magPrev != 0) {
+			result = [vector[0] * mag / magPrev, vector[1] * mag / magPrev];
+			result = roundArray(result);
+		} else {
+			result = [0, 0];
+		}
+
+		return result;
 	},
 
-	dist: function(_Pos0, _Pos1) {
-		return math.sqrt(math.pow(_Pos1[0] - _Pos0[0], 2) + math.pow(_Pos1[1] - _Pos0[1], 2));
+	dist: function (pos0, pos1) {
+		let result = math.sqrt(math.pow(pos1[0] - pos0[0], 2) + math.pow(pos1[1] - pos0[1], 2));
+		result = round(result);
+
+		return result;
 	},
 
-	sub: function(_Vector0, _Vector1) {
-		return [(_Vector1[0] - _Vector0[0]), (_Vector1[1] - _Vector0[1])];
+	inbound: function (pos0, pos1, radius) {
+		return math.pow(pos1[0] - pos0[0], 2) + math.pow(pos1[1] - pos0[1], 2) <= math.pow(radius, 2);
 	},
 
-	div: function(_Vector, _Divisor) {
-		let newMag = this.mag(_Vector)/_Divisor;
-
-		return [(_Vector[0] * newMag/this.mag(_Vector)), (_Vector[1] * newMag/this.mag(_Vector))];
+	outbound: function (pos0, pos1, radius) {
+		return math.pow(pos1[0] - pos0[0], 2) + math.pow(pos1[1] - pos0[1], 2) > math.pow(radius, 2);
 	},
 
-	mult: function(_Vector, _Multiplier) {
-		return [(_Vector[0] * _Multiplier), (_Vector[1] * _Multiplier)];
+	sub: function (vector0, vector1) {
+		let result = [(vector1[0] - vector0[0]), (vector1[1] - vector0[1])]
+		result = roundArray(result)
+
+		return result;
 	},
 
-	add: function(_Vector0, _Vector1) {
-		return [_Vector0[0] + _Vector1[0], _Vector0[1] + _Vector1[1]];
+	div: function (vector, divisor) {
+		let newMag = this.mag(vector) / divisor;
+
+		let result;
+
+		if (this.mag(vector) != 0) {
+			result = [(vector[0] * newMag / this.mag(vector)), (vector[1] * newMag / this.mag(vector))];
+			result = roundArray(result)
+		} else {
+			result = [0, 0];
+		}
+
+		return result;
+	},
+
+	mult: function (vector, multiplier) {
+		let result = [(vector[0] * multiplier), (vector[1] * multiplier)];
+		result = roundArray(result)
+
+		return result;
+	},
+
+	add: function (vector0, vector1) {
+		let result = [vector0[0] + vector1[0], vector0[1] + vector1[1]];
+		result = roundArray(result)
+
+		return result;
 	},
 
 	// Angle in radians
-	rotate: function(_Vector, _Angle) {
-	    let cos = math.cos(_Angle);
-	    let sin = math.sin(_Angle);
+	rotate: function (vector, angle) {
+		let cos = math.cos(angle);
+		let sin = math.sin(angle);
 
-	    let tmpX = (cos * _Vector[0]) + (sin * _Vector[1]);
-	    let tmpY = (cos * _Vector[1]) - (sin * _Vector[0]);
+		let tmpX = (cos * vector[0]) + (sin * vector[1]);
+		let tmpY = (cos * vector[1]) - (sin * vector[0]);
+
+		tmpX = round(tmpX);
+		tmpY = round(tmpY);
 
 		return [tmpX, tmpY];
 	},
 
-	constrain: function(_Val, _Min, _Max) {
-		let val = _Val;
+	// Angle in radians
+	angleBetween: function (vector0, vector1) {
+		let angle = Math.atan2(vector1[1] - vector0[1], vector1[0] - vector0[0]);
 
-		if (val > _Max) {
-			val = _Max;
-		} else if (val < _Min) {
-			val = _Min;
+		return angle;
+	},
+
+	constrain: function (val, min, max) {
+		let result = val;
+
+		if (result > max) {
+			result = max;
+		} 
+		if (result < min) {
+			result = min;
 		}
 
-		return val;
+		result = round(result);
+
+		return result;
 	}
+}
+
+function round(val) {
+	return Math.round((val + Number.EPSILON) * simulation.calcDecimalsMultiplier) / simulation.calcDecimalsMultiplier;
+}
+
+function roundArray(array) {
+	let resultArray = [];
+
+	array.forEach(function (element) {
+		resultArray.push(Math.round((element + Number.EPSILON) * simulation.calcDecimalsMultiplier) / simulation.calcDecimalsMultiplier);
+	})
+
+	return resultArray;
 }

@@ -8,19 +8,29 @@ const log = require("./log.js");
 
 let explosionSquareVals = [];
 let explosionMinSize = 2;
-let explosionMaxSize = 384;
+let explosionMaxSize = 128;
 let explosionMinForce = .2;
 let explosionMaxForce = 64;
 
 let lineTrails = [];
 let linePolygons = [];
 
+// SwirlForce get divided by distance to center
+let swirlForceBase = .4;
+
+exports.swirlForceBase = swirlForceBase;
+
+function reset() {
+	explosionSquareVals = [];
+	lineTrails = [];
+}
+
 function explosionSetup() {
 	for (let i = 0; i <= explosionMaxSize - explosionMinSize; i++) {
 		explosionSquareVals[i] = [];
 
 		for (let j = 0; j <= explosionMaxSize + i; j++) {
-			explosionSquareVals[i].push(math.floor(math.sqrt(j + 1) / math.sqrt(explosionMinSize + i) * (explosionMinSize + i)));
+			explosionSquareVals[i].push(math.sqrt(j + 1) / math.sqrt(explosionMinSize + i) * (explosionMinSize + i));
 		}
 	}
 }
@@ -46,12 +56,28 @@ class explosion {
 			tmpParticles = tmpParticles.concat(simulation.tree.contentParticles(this.pos, this.tmpSize, 0));
 
 			tmpParticles.forEach(function (tmpParticle) {
-				if (geometric.dist(tmpParticle.pos, self.pos) < self.tmpSize) {
-					let tmpForceVelocity = [tmpParticle.pos[0] - self.pos[0], tmpParticle.pos[1] - self.pos[1]];
-					tmpForceVelocity = geometric.setMag(tmpForceVelocity, self.force / geometric.dist(self.pos, tmpParticle.pos));
+				let tmpExplosionPos = self.pos;
 
-					tmpParticle.addAcceleration(tmpForceVelocity);
+				if (tmpParticle.pos[0] - self.pos[0] > simulation.fieldWidth / 2) {
+					// Particle is over the left border
+					tmpExplosionPos[0] += simulation.fieldWidth;
+				} else if (tmpParticle.pos[0] - self.pos[0] < -simulation.fieldWidth / 2) {
+					// Particle is over right border
+					tmpExplosionPos[0] -= simulation.fieldWidth;
 				}
+
+				if (tmpParticle.pos[1] - self.pos[1] > simulation.fieldWidth / 2) {
+					// Particle is over the top border
+					tmpExplosionPos[1] += simulation.fieldWidth;
+				} else if (tmpParticle.pos[1] - self.pos[1] < -simulation.fieldWidth / 2) {
+					// Particle is over bottom border
+					tmpExplosionPos[1] -= simulation.fieldWidth;
+				}
+
+				let tmpForceVelocity = [tmpParticle.pos[0] - tmpExplosionPos[0], tmpParticle.pos[1] - tmpExplosionPos[1]];
+				tmpForceVelocity = geometric.setMag(tmpForceVelocity, self.force / Math.pow(geometric.dist(tmpExplosionPos, tmpParticle.pos), 2));
+
+				tmpParticle.addAcceleration(tmpForceVelocity, "explosion at " + self.pos);
 			});
 		} else if (this.particleType == 1) {
 			let tmpFluidParticles = [];
@@ -76,13 +102,11 @@ class explosion {
 					tmpExplosionPos[1] -= simulation.fieldWidth;
 				}
 
-				if (geometric.dist(tmpFluidParticle.pos, tmpExplosionPos) < self.tmpSize) {
-					let tmpForceVelocity = [tmpFluidParticle.pos[0] - tmpExplosionPos[0], tmpFluidParticle.pos[1] - tmpExplosionPos[1]];
-					tmpForceVelocity = geometric.setMag(tmpForceVelocity, (self.force / geometric.dist(tmpExplosionPos, tmpFluidParticle.pos)) * 2);
+				let tmpForceVelocity = [tmpFluidParticle.pos[0] - tmpExplosionPos[0], tmpFluidParticle.pos[1] - tmpExplosionPos[1]];
+				tmpForceVelocity = geometric.setMag(tmpForceVelocity, (self.force / geometric.dist(tmpExplosionPos, tmpFluidParticle.pos)) * 2);
 
-					tmpFluidParticle.xv += tmpForceVelocity[0];
-					tmpFluidParticle.yv += tmpForceVelocity[1];
-				}
+				tmpFluidParticle.xv += tmpForceVelocity[0];
+				tmpFluidParticle.yv += tmpForceVelocity[1];
 			});
 		}
 
@@ -135,12 +159,79 @@ function setShockwave(pos, strength) {
 	simulation.shockwaveData.push([pos[0], pos[1], strength]);
 }
 
+// ////////////////////////////// SWIRLS
+
+class swirl {
+	// Type refers to the kind of particle affected by the swirl. 0 = fluid particles, 1 = particles
+	constructor(pos, radius, direction, type) {
+		this.pos = pos;
+		this.radius = radius;
+		this.direction = direction;
+		this.type = type;
+	}
+
+	draw() {
+		let tmpParticles = [];
+
+		if (this.type == 0) {
+			tmpParticles = simulation.tree.contentParticles(this.pos, this.radius, 0);
+		} else {
+			tmpParticles = simulation.fluidTree.contentParticles(this.pos, this.radius, 0);
+		}
+
+		let self = this;
+
+		tmpParticles.forEach(function (particle) {
+			if (!particle.merged) {
+				let tmpSwirlPos = [self.pos[0], self.pos[1]];
+
+				if (particle.pos[0] - self.pos[0] > simulation.fieldWidth / 2) {
+					// Fluid Particle is over the left border
+					tmpSwirlPos[0] += simulation.fieldWidth;
+				} else if (particle.pos[0] - self.pos[0] < -simulation.fieldWidth / 2) {
+					// Fluid Particle is over right border
+					tmpSwirlPos[0] -= simulation.fieldWidth;
+				}
+
+				if (particle.pos[1] - self.pos[1] > simulation.fieldWidth / 2) {
+					// Fluid Particle is over the top border
+					tmpSwirlPos[1] += simulation.fieldWidth;
+				} else if (particle.pos[1] - self.pos[1] < -simulation.fieldWidth / 2) {
+					// Fluid Particle is over bottom border
+					tmpSwirlPos[1] -= simulation.fieldWidth;
+				}
+
+				let accelercationDir = [particle.pos[0] - tmpSwirlPos[0], particle.pos[1] - tmpSwirlPos[1]];
+
+				let distance = geometric.mag(accelercationDir);
+
+				accelercationDir = geometric.rotate(accelercationDir, Math.PI/2 * self.direction);
+				accelercationDir = geometric.setMag(accelercationDir, swirlForceBase/distance);
+
+				if (self.type == 0) {
+					particle.addAcceleration(accelercationDir, "Swirl")
+				} else {
+					particle.xv += accelercationDir[0];
+					particle.yv += accelercationDir[1];
+				}
+			}
+		});
+	}
+}
+
 // ////////////////////////////// EXPORTS
 
 var effects = module.exports = {
+	reset,
 	explosionSetup,
 	explosion,
+	swirl,
 	setLineTrails,
 	updateLineTrails,
-	setShockwave
+	setShockwave,
+	explosionMinSize,
+	explosionMaxSize,
+	explosionMinForce,
+	explosionMaxForce
+
 }

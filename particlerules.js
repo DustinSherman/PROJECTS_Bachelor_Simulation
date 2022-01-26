@@ -11,13 +11,13 @@ let cac = 2;
 let ltr = 3;
 
 let particleResults = [
-    // Results FluidMovement (FM) / FluidExplosion (FE) / Fluidflowfield (FF) / CA Neighbourhood/Rule Set (CAS) / CA Complete (CAC) / CA Animate (CAA)
+    // Results FluidMovement (FM) / FluidExplosion (FE) / Fluidflowfield (FF) / CA Neighbourhood/Rule Set (CAS) / CA Complete (CAC) / CA Animate (CAA) / Line Trails (LTR)
 
     // Lowest Akin / State	| 1   | -1  | 2   | -2  | 3   | -3  | 4   | -4  | 5   | -5  | 6   | -6  | 7   | -7  | 8   | -8  | 9   | -9  | 10  | -10 | 11  | -11 |
     /* 0 */                 [ fm  , fm  , fm  , fm  , fm  , fm  , fe  , fe  , cac , ltr , fm  , fm  , fe  , fe  , fe  , fe  , cac , ltr ,     ,     , fe  , fe  ],
-    /* 1 */                             [ fm  , fm  , fm  , fm  , fm  , fm  , fm  , fm  , fm  , fm  , cac , ltr , cac , ltr , cac , ltr , fe  , fe  , cac , ltr ],
+    /* 1 */                             [ fm  , fm  , fm  , fm  , fm  , fm  , cac , ltr ,     ,     , cac , ltr , cac , ltr , cac , ltr , fe  , fe  , cac , ltr ],
     /* 2 */                                         [ fm  , fm  , fm  , fm  , cac , ltr ,     ,     ,     ,     ,     ,     , cac , ltr , cac , ltr , cac , ltr ],
-    /* 3 */                                                     [ fm  , fm  , fm  , fm  , fm  , fm  ,     ,     ,     ,     , fm  , fm  , cac , ltr , cac , ltr ],
+    /* 3 */                                                     [ fm  , fm  , cac , ltr ,     ,     ,     ,     ,     ,     , fm  , fm  , cac , ltr , cac , ltr ],
     /* 4 */                                                                 [ fm  , fm  , fm  , fm  ,     ,     ,     ,     ,     ,     , cac , ltr ,     ,     ],
     /* 5 */                                                                             [ fe  , fe  , cac , ltr , cac , ltr , fm  , fm  ,     ,     ,     ,     ],
     /* 6 */                                                                                         [ fe  , fe  , cac , ltr , cac , ltr , cac , ltr ,     ,     ],

@@ -8,6 +8,7 @@ const fluid = require("./fluid.js");
 const caRules = require("./cellularautomatarules.js");
 const particle = require("./particle.js");
 const particlerules = require("./particlerules.js");
+const effects = require("./effects.js");
 
 let record = [];
 exports.record = record;
@@ -44,6 +45,8 @@ let fluidFlowfieldDurationTotal = 0;
 
 let shockWaveCount = 0;
 
+let swirlCount = 0;
+
 exports.caCount = caCount;
 exports.caAnimateCount = caAnimateCount;
 exports.caNeighbourhoodRulesCount = caNeighbourhoodRulesCount;
@@ -53,13 +56,58 @@ exports.fluidFlowfieldCount = fluidFlowfieldCount;
 exports.lineTrailCount = lineTrailCount;
 exports.linePolygonCount = linePolygonCount;
 exports.shockWaveCount = shockWaveCount;
+exports.swirlCount = swirlCount;
+
+function reset() {
+    record = [];
+
+    particleReactionResults = [];
+
+    explosionCount = 0;
+    explosionSizeTotal = 0;
+    explosionForceTotal = 0;
+
+    caCount = 0;
+    caSizeTotal = 0;
+    caRuleTotal = 0;
+    caNeighbourhoodTotal = 0;
+    caAnimateCount = 0;
+    caAnimateSizeTotal = 0;
+    caNeighbourhoodRulesCount = 0;
+    caNeighbourhoodRulesRuleTotal = 0;
+    caNeighbourhoodRulesNeighbourhoodTotal = 0;
+    caAnimateArray = [];
+
+    lineTrailCount = 0;
+    linePolygonCount = 0;
+
+    fluidMoveCount = 0;
+    fluidMoveSizeTotal = 0;
+    fluidMoveVelocityTotal = 0;
+    fluidExplosionCount = 0;
+    fluidExplosionSizeTotal = 0;
+    fluidExplosionForceTotal = 0;
+    fluidFlowfieldCount = 0;
+    fluidFlowfieldSizeTotal = 0;
+    fluidFlowfieldDurationTotal = 0;
+
+    shockWaveCount = 0;
+}
+
+exports.reset = reset;
 
 function logBaseSettings() {
     let settingsString = "";
 
     // UNCOMMENT to log some info
     settingsString += "\r\n" + "Info";
-    settingsString += "\r\n" + "  Deleted Line Polygon Function and CaSetFunction.";
+    settingsString += "\r\n" + "  Balance Phase now at 9600 instead of 11520. Balance threshold now at 660 instead of 800";
+    settingsString += "\r\n" + "  Balance Phase Mass Reduction/Increase now mass/1.6 instead of mass/1.8 times balanceMulti.";
+    settingsString += "\r\n" + "  Balance Phase now also increases/decreases reaction and mergeCount. +/- Divided by 2.5 times round(balanceMulti)";
+    // settingsString += "\r\n" + "  Balance Phase now also increases/decreases explosionMultiplicator. +/- balanceMulti/2";
+    settingsString += "\r\n" + "  Swirl Fluid Particle Radius is divided by 2 and particlerules changed (deleted some fluidmove effects) to decrease saved data size.";
+    settingsString += "\r\n" + "  Reduced size of CAs and made it relevant to timePassed";
+    settingsString += "\r\n" + "  Save all Freq changed to 1920 from 960";
     settingsString += "\r\n" + " ";
 
     settingsString += "\r\n" + "General Settings / Data";
@@ -68,8 +116,8 @@ function logBaseSettings() {
 
     if (simulation.startHexString != undefined) {
         settingsString += "\r\n" + "  StartHexString " + simulation.startHexString;
-        settingsString += "\r\n" + "  StartBinString " + simulation.startBinString;
-        settingsString += "\r\n" + "  StartParticleCount " + simulation.startBinString.length;
+        settingsString += "\r\n" + "  StartBinString " + simulation.startBitString;
+        settingsString += "\r\n" + "  StartParticleCount " + simulation.startBitString.length;
     }
     settingsString += "\r\n" + "  GravConstant " + simulation.gravConstant;
     settingsString += "\r\n" + "  FieldWidth " + simulation.fieldWidth;
@@ -106,12 +154,11 @@ function logBaseSettings() {
     settingsString += "\r\n" + "  " + "Particle Results";
     settingsString += "\r\n" + "    " + "Lowest Akin / State | 1   | -1  | 2   | -2  | 3   | -3  | 4   | -4  | 5   | -5  | 6   | -6  | 7   | -7  | 8   | -8  | 9   | -9  | 10  | -10 | 11  | -11";
     for (let i = 0; i < simulation.stateMax - 1; i++) {
-
         settingsString += "\r\n" + "    ";
         settingsString += subsequentSpaces(i, 19);
         settingsString += " |";
-        for (let l = 1; l < simulation.stateMax; l++) { 
-            for (let j = -1; j <= 1; j += 2) {           
+        for (let l = 1; l < simulation.stateMax; l++) {
+            for (let j = -1; j <= 1; j += 2) {
                 let result = particlerules.getParticleReactionResult(l * j, i, 0);
                 let resultString = particleResultsStrings[result];
                 if (resultString == undefined) {
@@ -164,24 +211,30 @@ function logBaseSettings() {
     settingsString += "\r\n" + "Fluid Cells Data";
     settingsString += "\r\n" + "  " + "Resolution " + simulation.fluidCellResolution;
     settingsString += "\r\n" + "  " + "Radius " + simulation.fluidCellRadius;
-    let baseFluidParticles = simulation.fluidTree.contentParticles([simulation.fluidCellResolution/2, simulation.fluidCellResolution/2], simulation.fluidCellRadius, 0).length;
+    let baseFluidParticles = simulation.fluidTree.contentParticles([simulation.fluidCellResolution / 2, simulation.fluidCellResolution / 2], simulation.fluidCellRadius, 0).length;
     settingsString += "\r\n" + "  " + "BaseFluidParticles (Radius " + simulation.fluidCellRadius + ") " + baseFluidParticles;
     settingsString += "\r\n";
+
+    // Fluid Swirl Data
+    settingsString += "\r\n" + "Fluid Swirl Data";
+    settingsString += "\r\n" + "  " + "SwirlVelocityMaxAbsReduceBase " + particle.swirlVelocityMaxAbsReduceBase;
+    settingsString += "\r\n" + "  " + "SwirlForceBase " + effects.swirlForceBase;
+    settingsString += "\r\n" + "  " + "SwirlRadiusBase " + particle.swirlRadiusBase;
 
     // Cellular Automata Data
     settingsString += "\r\n" + "CellularAutomata Data";
     settingsString += "\r\n" + "  " + "Resolution " + simulation.caResolution;
-    
+
     settingsString += "\r\n" + "  " + "Set Variables";
     settingsString += "\r\n" + "  " + "  FluidParticleRadius " + particle.caRuleParticleRadius;
     settingsString += "\r\n";
-    
+
     // Quadtree Settings
-    // settingsString += "\r\n" + "Quad Tree";
-    // settingsString += "\r\n" + "  " + "Fluid Particle Capacity " + simulation.fluidQuadtreeCapacity;
+    settingsString += "\r\n" + "Quad Tree";
+    settingsString += "\r\n" + "  " + "Fluid Particle Capacity " + simulation.fluidQuadtreeCapacity;
 
     // Timing Settings
-    let timingNames = ['Normal Phase', 'ExpandPhase', 'EndPhase'];
+    let timingNames = ['BalancePhase', 'EndPhase'];
     settingsString += "\r\n" + "Timing";
     settingsString += "\r\n" + "  ";
     for (let i = 0; i < simulation.timeSteps.length; i++) {
@@ -208,13 +261,13 @@ function logBaseSettings() {
     record.push(settingsString);
     exports.record = record;
 
-    saveFile('_record_', record);
+    saveFile('_record_' + simulation.startHexString + '.txt', record);
 }
 
 exports.logBaseSettings = logBaseSettings;
 
-function saveParticles(_Freq) {
-    if (simulation.timePassed % _Freq == 0) {
+function saveParticles(freq) {
+    if (simulation.timePassed % freq == 0) {
         let particleVals = simulation.particleStats;
 
         let particleTotal = [0, 0];
@@ -236,7 +289,7 @@ function saveParticles(_Freq) {
                 stringNegativ += " | ";
             }
         }
-        
+
         let effParticleCount = 0;
         let akin = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         let akinString = "";
@@ -257,7 +310,7 @@ function saveParticles(_Freq) {
 
             akin[particle.akin]++;
 
-            polarity[(particle.polarity/2) + .5]++;
+            polarity[(particle.polarity / 2) + .5]++;
         });
 
         for (let i = 0; i < akin.length; i++) {
@@ -277,8 +330,8 @@ function saveParticles(_Freq) {
         string += "\r\n        Negativ (" + particleTotal[1] + ") " + stringNegativ;
         string += "\r\n        Akin " + akinString;
         string += "\r\n        Polarity " + polarityString;
-        
-        string += "\r\n        Explosion Count " + explosionCount + " Ø Size " + (explosionSizeTotal/explosionCount).toFixed(2) + " Ø Force " + (explosionForceTotal/explosionCount).toFixed(2);
+
+        string += "\r\n        Explosion Count " + explosionCount + " Ø Size " + (explosionSizeTotal / explosionCount).toFixed(2) + " Ø Force " + (explosionForceTotal / explosionCount).toFixed(2);
 
 
         // UNCOMMENT to log the average and overview of the Cellular Automata Rules, which are determined by the number of fluid particles in a radius around the particle
@@ -319,19 +372,22 @@ function saveParticles(_Freq) {
             }
         }
         */
-       
+
         // UNCOMMENT to log Cellular Automata Happenings
         // string += "\r\n        CA LiveDeath-Rule: " + caHappenings[0] + " Neighbourhood: " + caHappenings[1] + " CellsAlive: " + caHappenings[2];
 
         // UNCOMMENT to log Fluid Stiff
-        string += "\r\n        FluidMove Count: " + fluidMoveCount + " Ø Size " + ((fluidMoveSizeTotal/fluidMoveCount).toFixed(2)) + " Ø Velocity " + ((fluidMoveVelocityTotal/fluidMoveCount).toFixed(2));
-        string += "\r\n        FluidExplosion Count: " + fluidExplosionCount + " Ø Size " + ((fluidExplosionSizeTotal/fluidExplosionCount).toFixed(2)) + " Ø Force " + ((fluidExplosionForceTotal/fluidExplosionCount).toFixed(2));
+        string += "\r\n        FluidMove Count: " + fluidMoveCount + " Ø Size " + ((fluidMoveSizeTotal / fluidMoveCount).toFixed(2)) + " Ø Velocity " + ((fluidMoveVelocityTotal / fluidMoveCount).toFixed(2));
+        string += "\r\n        FluidExplosion Count: " + fluidExplosionCount + " Ø Size " + ((fluidExplosionSizeTotal / fluidExplosionCount).toFixed(2)) + " Ø Force " + ((fluidExplosionForceTotal / fluidExplosionCount).toFixed(2));
 
         // UNCOMMENT to log Cellular Automatas Stuff
-        string += "\r\n        CA Count: " + caCount + " Ø Size " + ((caSizeTotal/caCount).toFixed(2)) + " Ø Rule " + ((caRuleTotal/caCount).toFixed(2)) + " Ø Neighbourhood " + ((caNeighbourhoodTotal/caCount).toFixed(2));
+        string += "\r\n        CA Count: " + caCount + " Ø Size " + ((caSizeTotal / caCount).toFixed(2)) + " Ø Rule " + ((caRuleTotal / caCount).toFixed(2)) + " Ø Neighbourhood " + ((caNeighbourhoodTotal / caCount).toFixed(2));
 
         // UNCOMMENT to log lines (trails, polygons) stuff
         string += "\r\n        Line Trails Count: " + lineTrailCount;
+
+        // UNCOMMENT zo log swirl Count
+        string += "\r\n        Swirl Count: " + swirlCount;
 
         // UNCOMMENT to log all Reaction Results
         string += "\r\n        Particle Reaction Results";
@@ -343,38 +399,38 @@ function saveParticles(_Freq) {
             }
         }
 
-        // string += "\r\n        Shockwave Count: " + shockWaveCount;
+        string += "\r\n        Shockwave Count: " + shockWaveCount;
 
         record.push(string);
         exports.record = record;
 
         logFPS();
 
-        saveFile('_record_', record);
+        saveFile('_record_' + simulation.startHexString + '.txt', record);
     }
 }
 
 exports.saveParticles = saveParticles;
 
 function saveFile(fileName, data) {
-    let saveDestination = 'public/' + simulation.startHexString + '/';
-    let dateString = (simulation.startDate.getFullYear() % 100) + pad((simulation.startDate.getMonth() + 1), 2) + pad(simulation.startDate.getDate(), 2) + pad(simulation.startDate.getHours(), 2) + pad(simulation.startDate.getMinutes(), 2);
+    let saveDestination = 'public/' + simulation.startHexString + '/log/';
+    // let dateString = (simulation.startDate.getFullYear() % 100) + pad((simulation.startDate.getMonth() + 1), 2) + pad(simulation.startDate.getDate(), 2) + pad(simulation.startDate.getHours(), 2) + pad(simulation.startDate.getMinutes(), 2);
 
-    fs.writeFileSync(saveDestination + dateString + fileName + simulation.startHexString + '.txt', data);
+    fs.writeFileSync(saveDestination + fileName, data);
 }
 
 exports.saveFile = saveFile;
 
 function logFPS() {
-    let elapsedTime = Math.floor((Date.now() - simulation.realtimeStart)/1000);
-    let fps = simulation.timePassed/elapsedTime;
+    let elapsedTime = Math.floor((Date.now() - simulation.realtimeStart) / 1000);
+    let fps = simulation.timePassed / elapsedTime;
 
     let string = "\r\n" + "      " + "  FPS: " + fps.toFixed(4) + " (" + simulation.getCurrentFPS()[0].toFixed(4) + ")";
 
     record.push(string);
     exports.record = record;
 
-    saveFile('_record_', record);
+    saveFile('_record_' + simulation.startHexString + '.txt', record);
 }
 
 exports.logFPS = logFPS;
@@ -387,17 +443,50 @@ function logNewPhase(phase) {
     record.push(string);
     exports.record = record;
 
-    saveFile('_record_', record);
+    saveFile('_record_' + simulation.startHexString + '.txt', record);
 }
 
 exports.logNewPhase = logNewPhase;
+
+function logBalancePhase(particleCount, particleThreshold, balanceMulti, massPrev, massNew, reactionCountPrev, reactionCountNew, mergeCountPrev, mergeCountNew/*, particleExplosionMultiPrev, particleExplosionMultiNew*/) {
+    let string = "\r\n" + "        " + "Balance Phase ParticleCount " + particleCount + " Threshold " + particleThreshold + " Resulting Multiplicator " + balanceMulti;
+
+    /*
+    if (balanceMulti > 0) {
+        string += "\r\n" + "        " + "Mass Reduction Before/After";
+    } else {
+        string += "\r\n" + "        " + "Mass Increase Before/After";
+    }
+
+    for (let i = 0; i < simulation.particleVals.length; i++) {
+        string += "\r\n" + "        " + "State " + i + " " + massPrev[i] + "/" + massNew[i];
+    }
+    */
+
+    string += "\r\n" + "        " + "Particle Vals Change (Before/After)";
+
+    string += "\r\n" + "        " + "State | Mass             | ReactionCount | MergeCount";
+
+    for (let i = 0; i < simulation.particleVals.length; i++) {
+        string += "\r\n" + "        " + subsequentSpaces(i + 1, 5) + " | " + subsequentSpaces((massPrev[i] + "/" + massNew[i]), 16) + " | " + subsequentSpaces(reactionCountPrev[i] + "/" + reactionCountNew[i], 13) + " | " + mergeCountPrev[i] + "/" + mergeCountNew[i];
+    }
+
+    // string += "\r\n" + "        " + "ParticleExplosionMuliplicator (Before/After) " + particleExplosionMultiPrev + "/" + particleExplosionMultiNew;
+
+    record.push(string);
+    exports.record = record;
+
+    saveFile('_record_' + simulation.startHexString + '.txt', record);
+}
+
+exports.logBalancePhase = logBalancePhase;
 
 function logBinary(binaryResult) {
     let string = " BinaryResult " + binaryResult;
 
     record.push(string);
 
-    saveFile('_record_', record);
+    saveFile('_record_' + simulation.startHexString + '.txt', record);
 }
 
 exports.logBinary = logBinary;
@@ -415,13 +504,13 @@ function logReaction(particle, center, lowestAkin) {
 
     self.tmpCalcParticles.forEach(function (logParticle) {
         if (logParticle != self) {
-            string += " " + logParticle.state  + "#" + logParticle.id;
+            string += " " + logParticle.state + "#" + logParticle.id;
         }
     });
 
     record.push(string);
 
-    saveFile('_record_', record);
+    saveFile('_record_' + simulation.startHexString + '.txt', record);
 }
 
 exports.logReaction = logReaction;
@@ -433,7 +522,7 @@ function logReactionResult(particle) {
         string += " " + tmpCalcParticle.state + "#" + tmpCalcParticle.id;
     });
 
-    let newParticleCount = Math.floor(particle.tmpCalcParticles.length/2);
+    let newParticleCount = Math.floor(particle.tmpCalcParticles.length / 2);
 
     for (let i = 0; i < newParticleCount; i++) {
         string += " " + simulation.particles[simulation.particles.length - 1 - i].state + "#" + simulation.particles[simulation.particles.length - 1 - i].id;
@@ -442,7 +531,7 @@ function logReactionResult(particle) {
     // UNCOMMENT to log the result of a reaction
     // record.push(string);
 
-    saveFile('_record_', record);
+    saveFile('_record_' + simulation.startHexString + '.txt', record);
 }
 
 exports.logReactionResult = logReactionResult;
@@ -460,13 +549,13 @@ function logReactionLowestAkin(lowestAkin) {
 
     record.push(string);
 
-    saveFile('_record_', record);
+    saveFile('_record_' + simulation.startHexString + '.txt', record);
 }
 
 exports.logReactionLowestAkin = logReactionLowestAkin;
 
 function logExplosion(size, force, count, threshold) {
-    let string = "\r\n" + "        " + "Explosion " + "Size " + size.toFixed(2) + " Force " + force.toFixed(2);
+    let string = "\r\n" + "        " + "New Explosion " + "Size " + size.toFixed(2) + " Force " + force.toFixed(2);
 
     if (count > threshold) {
         string += " " + count + "/" + threshold + " near Particles";
@@ -478,7 +567,7 @@ function logExplosion(size, force, count, threshold) {
 
     record.push(string);
 
-    saveFile('_record_', record);
+    saveFile('_record_' + simulation.startHexString + '.txt', record);
 }
 
 exports.logExplosion = logExplosion;
@@ -488,7 +577,7 @@ function logMerge(particle) {
 
     let string = "\r\n" + pad(simulation.timePassed, 6) + "  Merge [" + self.pos[0].toFixed(2) + ", " + self.pos[1].toFixed(2) + "] ";
 
-    string+= " " + self.state + "#" + self.id + " |";
+    string += " " + self.state + "#" + self.id + " |";
 
     self.tmpCalcParticles.forEach(function (logParticle) {
         if (logParticle != self) {
@@ -498,7 +587,7 @@ function logMerge(particle) {
 
     record.push(string);
 
-    saveFile('_record_', record);
+    saveFile('_record_' + simulation.startHexString + '.txt', record);
 }
 
 exports.logMerge = logMerge;
@@ -508,7 +597,7 @@ exports.logMerge = logMerge;
 // ////////////////////////////// Fluid
 
 function logFluidVelocity(size, velocityMag, velocityVector) {
-    let string = "\r\n" + "        " + "FluidVeloity Size " + size.toFixed(2) + " Velocity " + velocityMag.toFixed(2) + " Vector (" + velocityVector[0].toFixed(2) + ", " + velocityVector[1].toFixed(2) + ")";
+    let string = "\r\n" + "        " + "New FluidVeloity Size " + size.toFixed(2) + " Velocity " + velocityMag.toFixed(2) + " Vector (" + velocityVector[0].toFixed(2) + ", " + velocityVector[1].toFixed(2) + ")";
 
     fluidMoveCount++;
     fluidMoveSizeTotal += size;
@@ -516,13 +605,13 @@ function logFluidVelocity(size, velocityMag, velocityVector) {
 
     record.push(string);
 
-    saveFile('_record_', record);
+    saveFile('_record_' + simulation.startHexString + '.txt', record);
 }
 
 exports.logFluidVelocity = logFluidVelocity;
 
 function logFluidExplosion(size, force) {
-    let string = "\r\n" + "        " + "FluidExplosion Size " + size + " Force " + force;
+    let string = "\r\n" + "        " + "New FluidExplosion Size " + size + " Force " + force;
 
     fluidExplosionCount++;
     fluidExplosionSizeTotal += size;
@@ -530,7 +619,7 @@ function logFluidExplosion(size, force) {
 
     record.push(string);
 
-    saveFile('_record_', record);
+    saveFile('_record_' + simulation.startHexString + '.txt', record);
 }
 
 exports.logFluidExplosion = logFluidExplosion;
@@ -556,7 +645,7 @@ function logFluidFlowfield(size, duration, form) {
 
     record.push(string);
 
-    saveFile('_record_', record);
+    saveFile('_record_' + simulation.startHexString + '.txt', record);
 }
 
 exports.logFluidFlowfield = logFluidFlowfield;
@@ -565,7 +654,7 @@ exports.logFluidFlowfield = logFluidFlowfield;
 // ////////////////////////////// Cellular Automata
 
 function logCA(center, size, rule, neighbourhood, form) {
-    let string =  "\r\n" + "        " + "Cellular Automata pos " + center + " size " + size + " Rule " + rule + " Neighbourhood " + neighbourhood;
+    let string = "\r\n" + "        " + "New Cellular Automata pos " + center + " size " + size + " Rule " + rule + " Neighbourhood " + neighbourhood;
 
     if (form == 0) {
         string += " Form Rect";
@@ -580,7 +669,7 @@ function logCA(center, size, rule, neighbourhood, form) {
 
     record.push(string);
 
-    saveFile('_record_', record);
+    saveFile('_record_' + simulation.startHexString + '.txt', record);
 }
 
 exports.logCA = logCA;
@@ -590,16 +679,47 @@ exports.logCA = logCA;
 function logLineTrails(center, size, duration) {
     let string = "";
 
-    string += "\r\n" + "      " + "  " + "Trails center " + center + " size " + size + " duration " + duration;
+    string += "\r\n" + "      " + "  " + "New Trails center " + center + " size " + size + " duration " + duration;
 
     record.push(string);
 
     lineTrailCount++;
 
-    saveFile('_record_', record); 
+    saveFile('_record_' + simulation.startHexString + '.txt', record);
 }
 
 exports.logLineTrails = logLineTrails;
+
+
+// ////////////////////////////// Shockwaves
+
+function logShockwave(center, strength) {
+    let string = "\r\n" + "      " + "  " + "New Shockwave center " + center + " strength " + strength;
+
+    record.push(string);
+
+    shockWaveCount++;
+
+    saveFile('_record_' + simulation.startHexString + '.txt', record);
+}
+
+exports.logShockwave = logShockwave;
+
+// ////////////////////////////// Swirls
+
+function logSwirl(center, radius, direction, particleType) {
+    let string = "";
+
+    string += "\r\n" + "      " + "  " + "New Swirl center " + center + " radius " + radius + " direction " + direction + " " + particleType;
+
+    record.push(string);
+
+    swirlCount++;
+
+    saveFile('_record_' + simulation.startHexString + '.txt', record);
+}
+
+exports.logSwirl = logSwirl;
 
 // Save all reactions to a file
 function saveReactionFile() {
@@ -617,7 +737,7 @@ function saveReactionFile() {
     for (let i = 0; i < particleReactionResults.length; i++) {
         string += "\r\n" + i + "                |";
         for (let j = 0; j < particleReactionResults[i].length; j++) {
-            string += " " + spacePad(((particleReactionResults[i][j][0]/allReactionsCount) * 100).toFixed(1) + '%', 5) + " | " + spacePad(((particleReactionResults[i][j][1]/allReactionsCount) * 100).toFixed(1) + '%', 5) + " |";
+            string += " " + spacePad(((particleReactionResults[i][j][0] / allReactionsCount) * 100).toFixed(1) + '%', 5) + " | " + spacePad(((particleReactionResults[i][j][1] / allReactionsCount) * 100).toFixed(1) + '%', 5) + " |";
         }
     }
 
@@ -630,10 +750,10 @@ function saveReactionFile() {
         }
     }
 
-    string += "\r\n";   
+    string += "\r\n";
     string += "\r\nTotal Reactions " + allReactionsCount;
 
-    saveFile('_reactionStatistics_', string);
+    saveFile('_reactionStatistics_' + simulation.startHexString + '.txt', string);
 }
 
 exports.saveReactionFile = saveReactionFile;

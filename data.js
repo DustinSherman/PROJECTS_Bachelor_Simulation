@@ -2,11 +2,12 @@
 const fs = require('fs');
 
 // MY MODULES
-const server = require("./server.js");
 const simulation = require("./simulation.js");
 
 let saveFreq = 120;
+let saveAllFreq = 1920;
 exports.saveFreq = saveFreq;
+exports.saveAllFreq = saveAllFreq;
 
 // DataObjects
 let particleData = [];
@@ -15,16 +16,18 @@ let fluidCellData = [];
 let cellularAutomataData = [];
 let lineTrailsData = [];
 let linePolygonsData = [];
-// let shockwaveData = [];
+let shockwaveData = [];
+// let explosionData = [];
 
-function addData(tmpParticleData, tmpFluidData, tmpFluidCellData, tmpcaData, tmpLineTrailsData, tmpLinePolygonsData) {
+function addData(tmpParticleData, tmpFluidData, tmpFluidCellData, tmpcaData, tmpLineTrailsData, tmpShockwaveData/*, tmpExplosionData*/) {
     particleData.push(tmpParticleData);
     fluidData.push(tmpFluidData);
     fluidCellData.push(tmpFluidCellData);
     cellularAutomataData.push(tmpcaData);
     lineTrailsData.push(tmpLineTrailsData);
-    linePolygonsData.push(tmpLinePolygonsData);
-    // shockwaveData.push(tmpShockwaveData);
+    // linePolygonsData.push(tmpLinePolygonsData);
+    shockwaveData.push(tmpShockwaveData);
+    // explosionData.push(tmpExplosionData);
 }
 
 exports.addData = addData;
@@ -36,16 +39,18 @@ function save(index) {
     saveFile(index, fluidCellData, 'fluidCells');
     saveFile(index, cellularAutomataData, 'cellularAutomata');
     saveFile(index, lineTrailsData, 'lineTrails');
-    saveFile(index, linePolygonsData, 'linePolygons');
-    // saveFile(index, shockwaveData, 'shockwaves');
+    // saveFile(index, linePolygonsData, 'linePolygons');
+    saveFile(index, shockwaveData, 'shockwaves');
+    // saveFile(index, explosionData, 'explosion');
 
     particleData = [];
     fluidData = [];
     fluidCellData = [];
     cellularAutomataData = [];
     lineTrailsData = [];
-    linePolygonsData = [];
-    // shockwaveData = [];
+    // linePolygonsData = [];
+    shockwaveData = [];
+    // explosionData = [];
 }
 
 exports.save = save;

@@ -8,6 +8,12 @@ let resolution;
 let cells = [];
 exports.cells = cells;
 
+function reset() {
+    cells = [];
+}
+
+exports.reset = reset;
+
 function init() {
     resolution = simulation.caResolution;
 
@@ -29,8 +35,8 @@ function update() {
     // For every Cell check if a neighbourhood is set and if a rule is set
     for (let col = 0; col < cells.length; col++) {
         for (let row = 0; row < cells[col].length; row++) {
-            if (cells[col][row].neighbourhoodIndex !== -1 
-                && cells[col][row].rule != undefined) {
+            if (cells[col][row].neighbourhoodIndex !== -1 &&
+                cells[col][row].rule != undefined) {
                 updateCell(cells[col][row]);
             }
         }
@@ -38,8 +44,8 @@ function update() {
 
     for (let col = 0; col < cells.length; col++) {
         for (let row = 0; row < cells[col].length; row++) {
-            if (cells[col][row].neighbourhoodIndex !== -1 
-                && cells[col][row].rule != undefined) {
+            if (cells[col][row].neighbourhoodIndex !== -1 &&
+                cells[col][row].rule != undefined) {
                 cells[col][row].alive = cells[col][row].tmpAlive;
             }
         }
@@ -53,12 +59,19 @@ exports.update = update;
 function getChangedCells() {
     let tmpChangedCells = [];
 
+    let prevIndex = 0;
+
     for (let col = 0; col < cells.length; col++) {
         for (let row = 0; row < cells[col].length; row++) {
-            let index = col * simulation.fieldWidth/resolution + row;
+            let index = (col * simulation.fieldWidth / resolution + row) - prevIndex;
+            prevIndex = index;
+
+            let cellData = [];
 
             if (cells[col][row].preAlive != cells[col][row].alive) {
-                tmpChangedCells.push(index);
+                cellData.push(index);
+                cellData.push(cells[col][row].alive ? 1 : 0);
+                tmpChangedCells.push(cellData);
 
                 cells[col][row].preAlive = cells[col][row].alive;
             }
@@ -69,6 +82,35 @@ function getChangedCells() {
 }
 
 exports.getChangedCells = getChangedCells;
+
+function getAliveCells() {
+    let tmpAliveCells = [];
+
+    let prevIndex = 0;
+
+    for (let col = 0; col < cells.length; col++) {
+        for (let row = 0; row < cells[col].length; row++) {
+            let index = (col * simulation.fieldWidth / resolution + row) - prevIndex;
+            prevIndex = index;
+
+            let cellData = [];
+
+            if (cells[col][row].alive) {
+                cellData.push(index);
+                cellData.push(1);
+                tmpAliveCells.push(cellData);
+            }
+
+            if (cells[col][row].preAlive != cells[col][row].alive) {
+                cells[col][row].preAlive = cells[col][row].alive;
+            }
+        }
+    }
+
+    return tmpAliveCells;
+}
+
+exports.getAliveCells = getAliveCells;
 
 function cell(x, y) {
     this.x = x;
@@ -194,7 +236,7 @@ function getCells(center, size, form) {
 
     for (let i = col - tmpSize; i <= col + tmpSize; i++) {
         for (let j = row - tmpSize; j <= row + tmpSize; j++) {
-            if (form == 0 || (form == 1 && geometric.dist([col, row], [i, j]) <= tmpSize)) {
+            if (form == 0 || (form == 1 && geometric.dist([col, row], [i, j]) < tmpSize)) {
                 tmpCellIndex.push(cells[getTorus(i)][getTorus(j)]);
             }
         }

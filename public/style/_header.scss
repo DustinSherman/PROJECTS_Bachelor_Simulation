@@ -14,9 +14,12 @@ header {
     padding: 20px;
     box-sizing: border-box;
     color: #fff;
+    margin-top: -1px;
+    transition: margin-top .5s ease;
 
     .hamburger {
         z-index: 80;
+        position: absolute;
     }
 
     .info,
@@ -26,8 +29,7 @@ header {
     }
 
     .info {
-        float: right;
-        text-align: right;
+        text-align: center;
 
         span {
             display: block;
@@ -38,8 +40,13 @@ header {
         }
 
         #iteration,
-        #date {
+        #date,
+        #date .datetext {
             font-family: 'InconsolataSemiExpanded-ExtraLight', 'Lucida Console', Monaco, monospace;
+        }
+
+        .datetext {
+            display: inline;
         }
     }
 
@@ -127,10 +134,11 @@ header {
         }
 
         #line {
-            width: 100%;
+            width: calc(100% + 6px);
             height: 10px;
             position: absolute;
             bottom: 0;
+            margin: 0 -3px;
         }
 
         #marker {
@@ -138,6 +146,7 @@ header {
             width: 6px;
             position: absolute;
             left: 0;
+            margin-left: -3px;
         }
     }
 
@@ -154,6 +163,52 @@ header {
 
     br {
         display: none;
+    }
+}
+
+#closeheader {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    height: 20px;
+    width: 20px;
+    padding-top: 10px;
+    box-sizing: border-box;
+    z-index: 10;
+
+    &::after,
+    &::before {
+        content: '';
+        display: block;
+        background: white;
+        height: 2px;
+        width: 20px;
+        transition: transform .075s ease, margin-left .075s ease, margin-right .075s ease;
+    }
+
+    &::after {
+        transform: rotate(45deg);
+        margin-top: -2px;
+    }
+
+    &::before {
+        transform: rotate(-45deg);
+    }
+
+    &:hover {
+        cursor: pointer;
+    }
+
+    &.closed {
+        &::after {
+            transform: rotate(60deg);
+            margin-left: -5px;
+        }
+
+        &::before {
+            transform: rotate(-60deg);
+            margin-left: 4px;
+        }
     }
 }
 
@@ -182,6 +237,8 @@ header {
         .info {
             order: 3;
             flex-basis: 40%;
+            text-align: right;
+            padding-right: 40px;
         }
 
         .time {
@@ -209,6 +266,7 @@ header {
             order: 1;
             flex-basis: 15%;
             flex-wrap: wrap;
+            padding-right: 20px;
 
             #stop {
                 margin-left: calc(50% - 12px);
