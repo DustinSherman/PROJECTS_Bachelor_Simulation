@@ -181,7 +181,7 @@ function draw() {
         for (let i = 0; i < fluidCells.length; i++) {
             if (fluidCellsPrev[i][0] != fluidCells[i][0] || fluidCellsPrev[i][1] != fluidCells[i][1]) {
                 let index = i - prevIndex;
-                prevIndex = index;
+                prevIndex = i;
 
                 fluidCellData.push(index, Math.min(fluidCells[i][0], simulation.fluidCellMaxCount), fluidCells[i][1]);
 

@@ -199,7 +199,7 @@ function draw() {
     }
 
     if (play) {
-        drawFluidCells();
+        //drawFluidCells();
         drawParticles();
         drawFluid();
         drawCellularAutomata();
@@ -485,9 +485,10 @@ function initFluid() {
 function drawFluid() {
     // Refresh fluid particle vals
     // 3 Values per fluidParticle are saved, therefore we divide the total length of the array at this timeIndex by 3
-    let index = 0;
 
     if (timePassed > 0) {
+        let index = 0;
+
         for (let i = 0; i < fluid[relativeIndex][relativeTimePassed].length / 3; i++) {
             // Since only the difference between the indexes is saved the index always adds up
             index += fluid[relativeIndex][relativeTimePassed][i * 3];
@@ -570,6 +571,10 @@ function drawFluidCells() {
             let color = fluidCellColors[fluidColorPolarityIndex][fluidColorIndex];
 
             index += fluidCells[relativeIndex][relativeTimePassed][i * 3];
+
+            console.log(index, fluidCells[relativeIndex][relativeTimePassed][i * 3]);
+
+            console.log("Fluidcelspriteslength", fluidCellSprites.length)
 
             fluidCellSprites[index].tint = color;
         }
@@ -894,8 +899,10 @@ function resetFluid(index) {
                 let tmpRelativeTimePassed = i - Math.floor(i / saveFreq) * saveFreq;
                 let tmpRelativeIndex = Math.floor(i / saveFreq) % 2;
 
+                let index = 0;
+
                 for (let j = 0; j < fluid[tmpRelativeIndex][tmpRelativeTimePassed].length / 3; j++) {
-                    let index = fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3];
+                    index += fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3];
                     let tmpDistance;
 
                     // Check if the particle did cross a border at the side and we need to change the origin corrdinates

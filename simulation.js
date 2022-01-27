@@ -626,11 +626,8 @@ function gatherData() {
 	// Gather Fluid Data
 	fluidData = [];
 
-	let prevFluidIndex = 0;
-
 	for (let i = 0; i < fluid.particles.length; i++) {
-		let index = fluid.particles[i].index - prevFluidIndex;
-		prevFluidIndex = fluid.particles[i].index;
+		let index = fluid.particles[i].index;
 
 		fluidData.push(index);
 		fluidData.push(parseFloat(fluid.particles[i].pos[0].toFixed(decimals)));
@@ -687,6 +684,16 @@ function gatherData() {
 			explosionData.push(tmpData);
 		}
 		*/
+	}
+
+	// Clean up tmpFluidData by changing indexes to only the difference to the prev Index
+	let index = 0;
+	let prevIndex = 0;
+	for (let i = 0; i < tmpFluidData.length / 3; i++) {
+		index = tmpFluidData[i * 3] - prevIndex;
+		prevIndex = tmpFluidData[i * 3];
+
+		tmpFluidData[i * 3] = index;
 	}
 
 	data.addData(particleData, tmpFluidData, fluidCellData, tmpCellularAutmataData, lineTrailData, shockwaveData);
@@ -758,9 +765,9 @@ function getCurrentFPS() {
 
 exports.getCurrentFPS = getCurrentFPS;
 
-function compareFluidArray(_RawData, _PreRawData) {
-	let data = Array.from(_RawData);
-	let preData = Array.from(_PreRawData);
+function compareFluidArray(rawData, preRawData) {
+	let data = Array.from(rawData);
+	let preData = Array.from(preRawData);
 	let tmpData = [];
 
 	for (let i = 0; i < data.length / 3; i++) {
@@ -771,11 +778,13 @@ function compareFluidArray(_RawData, _PreRawData) {
 		}
 
 		if (dataChanged) {
+			/*
 			let tmpDataObject = [];
 
 			for (let j = 0; j < data[i].length; j++) {
 				tmpDataObject.push(data[i][j]);
 			}
+			*/
 
 			tmpData.push(data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
 		}
