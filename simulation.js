@@ -260,7 +260,8 @@ function saveSetupData() {
 		'caResolution': caResolution,
 		'caFreq': caFreq,
 		'endPhaseTime': timeSteps[timeSteps.length - 1],
-		'particleMaxState': stateMax
+		'particleMaxState': stateMax,
+		'simulationFinished' : false
 	}
 
 	tmpData = JSON.stringify(tmpData);
@@ -601,7 +602,6 @@ function initData() {
 
 	fs.copyFile('public/template.html', 'public/' + startHexString + '/index.html', (err) => {
 		if (err) throw err;
-		// console.log('source.txt was copied to destination.txt');
 	});
 }
 
@@ -747,6 +747,40 @@ function gatherData() {
 		console.log(saveString);
 		// console.log("Memory Used", process.memoryUsage());
 	};
+
+	// Change simulationFinshed value in setup.json file
+	if (timePassed >= timeEnd) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+		const fileName = 'public/' + startHexString + '/data/setup.json';
+		const file = require(fileName);
+	
+		file.simulationFinished = true;
+	
+		fs.writeFile(fileName, JSON.stringify(file));
+	}
 }
 
 let getCurrentFPSPrevTime = 0;
@@ -778,14 +812,6 @@ function compareFluidArray(rawData, preRawData) {
 		}
 
 		if (dataChanged) {
-			/*
-			let tmpDataObject = [];
-
-			for (let j = 0; j < data[i].length; j++) {
-				tmpDataObject.push(data[i][j]);
-			}
-			*/
-
 			tmpData.push(data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
 		}
 	}

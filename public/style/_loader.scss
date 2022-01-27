@@ -17,13 +17,14 @@ body.loading #loader {
     }
 }
 
-#remainingtime {
+#remainingtime-box {
     display: none;
     width: 100%;
     height: 100%;
     align-items: center;
     justify-content: center;
     text-align: center;
+    flex-direction: column;
 }
 
 body.loading #loading-circle-box {

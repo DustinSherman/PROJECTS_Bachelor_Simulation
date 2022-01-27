@@ -114,9 +114,9 @@
 				<div class="loader-box"></div>
 			</div>
 
-			<div id="remainingtime">
+			<div id="remainingtime-box">
 				<p>Your simulation should be finished around</p>
-				<span></span>
+				<span id="remainingtime"></span>
 			</div>
 		</div>
 
@@ -137,23 +137,33 @@
 		<script>
 			let loc = window.location.pathname;
 			let simulationID = loc.substring(1, loc.lastIndexOf('/'));
+			let simulationFinished = false;
 
 			// Check if simulation is yet finished
-			let tmpUrl = 'log/record_' + simulationID + '.txt';
-			var xhr = new XMLHttpRequest();
-			xhr.open('HEAD', tmpUrl, false);
-			xhr.send();
+			fetch('../' + simulationID + '/data/setup.json')
+				.then(response => response.json())
+				.then(data => {
+            		startDate = new Date(data['startDate']);
+					simulationFinished = data['simulationFinished'];
 
-			let simulationReady = false;
-			
-			let loaderElement = document.getElementById('loader');
+					if (simulationFinished) {
+						let loaderElement = document.getElementById('loader');
+						loaderElement.style.display = 'flex';
+					} else {
+						let remainingTimeBox = document.getElementById('remainingtime-box');
+						remainingTimeBox.style.display = 'flex';
 
-			if (xhr.status == "404") {
-				console.log("Simulation unfinished");
-			} else {
-				loaderElement.style.display = 'flex';
-				simulationReady = true;
-			}
+						// Display remainig time
+						let remainingTimeElement = document.getElementById('remainingtime');
+						let remainingTime = addHours(startDate, 4);
+
+						console.log(startDate);
+
+						remainingTimeElement.innerHTML = dateString(remainingTime);
+
+						document.body.classList.add('unfinished');
+					}
+				});
 		</script>
 
 		<script src="../js/pixi.min.js"></script>

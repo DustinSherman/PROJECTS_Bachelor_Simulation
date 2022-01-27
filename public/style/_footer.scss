@@ -66,3 +66,13 @@ body.fullscreen {
         }
     }
 }
+
+body.unfinished {
+    footer {
+        #fullscreen,
+        .scale,
+        .minimap {
+            display: none;
+        }
+    }
+}

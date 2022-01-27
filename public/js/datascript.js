@@ -94,18 +94,7 @@ function setupDataInit() {
 
             console.log("Setup.json load finished");
 
-            if (simulationReady) {
-                dataInit();
-            } else {
-                // Display remainig time
-                let remainingTimeElement = document.getElementById('remainingtime');
-
-                console.log(typeof startDate);
-
-                let remainingTime = addHours(startDate, 4);
-
-                remainingTimeElement.getElementsByTagName("span").innerHTML = remainingTime;
-            }
+            dataInit();
         });
 }
 
@@ -203,7 +192,9 @@ function animateLoadingCircle() {
     document.getElementById('loading-circle').style.strokeDashoffset = tmpCircleDashoffset;
 }
 
-setupDataInit();
+if (simulationFinished) {
+    setupDataInit();
+}
 
 // Add leading zeros
 function pad(num, size) {
@@ -215,9 +206,37 @@ function addHours(date, hours) {
     return new Date(new Date(date).setHours(date.getHours() + hours));
 }
 
-/*
-Date.prototype.addHours = function (h) {
-    this.setHours(this.getHours() + h);
-    return this;
+const months = [
+	'January',
+	'February',
+	'March',
+	'April',
+	'May',
+	'June',
+	'July',
+	'August',
+	'September',
+	'October',
+	'November',
+	'December'
+];
+
+function dateString(date) {
+    let day = date.getDate();
+    if (day == 1 || day == 21 || day == 31) {
+        day = String(day) + "st";
+    } else if (day == 2 || day == 22) {
+        day = String(day) + "nd";
+    } else if (day == 3 || day == 23) {
+        day = String(day) + "rd";
+    } else {
+        day = String(day) + "th";
+    }
+    let hours = date.getHours();
+    hours = ("0" + hours).slice(-2);
+    let minutes = date.getMinutes();
+    minutes = ("0" + minutes).slice(-2);
+    let dateString = day + " " + months[date.getMonth()] + " " + String(date.getFullYear()) + "  " + hours + ":" + minutes;
+
+    return dateString;
 }
-*/

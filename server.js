@@ -44,13 +44,28 @@ let simulationsWaiting = [
 ];
 let simulationRunning = false;
 
+let simulationsFinished = [];
+
 // SERVER
 app.set('port', (process.env.PORT || port));
 
 // Add Folder public for CSS and JS
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/', function (request, response) {
+app.use(function(request, response) {
+	response.status(404);
+
+	// respond with html page
+	if (request.accepts('html')) {
+		checkForSimulations();
+
+		// response.render('404', { url: request.url });
+		response.sendFile(__dirname + '/public/404.html');
+		return;
+	}
+})
+
+app.get('/', function (response) {
 	response.sendFile(__dirname + '/index.html');
 });
 
@@ -107,6 +122,32 @@ function spawnChildProcess() {
 	})
 }
 
+let standardFolders = ['js', 'style', 'assets'];
+
+function checkForSimulations() {
+	let folders;
+	fs.readdir('./public', { withFileTypes: true }, (error, files) => {
+		if (error) throw error;
+		folders = files
+			.filter((item) => item.isDirectory())
+			.map((item) => item.name);
+
+		// Remove standard folders from the list
+		for (let i = folders.length - 1; i >= 0 ; i--) {
+			for (let j = 0; j < standardFolders.length; j++) {
+				if (folders[i] == standardFolders[j]) {
+					folders.splice(i, 1);
+					break;
+				}
+			}
+		}
+
+
+
+		// console.log(folders);
+	});
+}
+
 function dateString() {
 	let currentDate = new Date();
 
@@ -129,7 +170,8 @@ function dateString() {
 	return dateString;
 }
 
-
+// When the server starts check for all allready simulated simulations
+checkForSimulations();
 
 
 
