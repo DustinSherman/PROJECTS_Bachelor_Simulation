@@ -786,25 +786,6 @@ function reset(time) {
 
     resetParticles();
 
-
-
-
-
-
-
-
-
-    console.log("Okay gonna reset everything at " + time);
-
-
-
-
-
-
-
-
-
-
     // Fluid Reset
     /*
         Iterate through all data of the fluid AND the fluid Cells from the beginning to the new time to load the current data.
