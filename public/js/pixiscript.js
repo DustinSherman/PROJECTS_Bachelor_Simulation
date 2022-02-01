@@ -405,8 +405,6 @@ function drawParticleShine(sprite, pos, totalLength, color, particleScale) {
 // ////////////////////////////// PARTICLE FLUID //////////////////////////////
 
 function initFluid() {
-    console.log("init Pixi Fluid");
-
     // Intialize Fluid Cells
     let rowCount = (fieldWidth / fluidCellResolution);
     let fluidCellCount = rowCount * rowCount;
@@ -432,6 +430,9 @@ function initFluid() {
     fluidCellAlphaDecrease = 1 / (timeEnd - endPhaseTime);
 
     // Load initial fluidParticleData
+
+    console.log("Init Pixi Fluid", fluidParticleCount, "fluidParticleCount");
+
     tmpFluidData = new Array(fluidParticleCount);
     for (let i = 0; i < fluidParticleCount; i++) {
         tmpFluidData[i] = [undefined, undefined, 0];
@@ -785,6 +786,25 @@ function reset(time) {
 
     resetParticles();
 
+
+
+
+
+
+
+
+
+    console.log("Okay gonna reset everything at " + time);
+
+
+
+
+
+
+
+
+
+
     // Fluid Reset
     /*
         Iterate through all data of the fluid AND the fluid Cells from the beginning to the new time to load the current data.
@@ -885,47 +905,51 @@ function initResetFluid() {
 }
 
 function resetFluid(index) {
+
+    console.log("Loading Fluid", index * saveFreq);
+
     fetch('../' + tmpPath + '/data/' + pad(index, 6) + '_fluid.json')
         .then(response => response.json())
         .then(function (data) {
             fluid[index % 2] = [...data];
-
+            
             for (let i = index * saveFreq; i < (index + 1) * saveFreq; i++) {
                 let tmpRelativeTimePassed = i - Math.floor(i / saveFreq) * saveFreq;
                 let tmpRelativeIndex = Math.floor(i / saveFreq) % 2;
 
-                let index = 0;
+                let fluidIndex = 0;
 
                 for (let j = 0; j < fluid[tmpRelativeIndex][tmpRelativeTimePassed].length / 3; j++) {
-                    index += fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3];
+
+                    fluidIndex += fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3];
                     let tmpDistance;
 
                     // Check if the particle did cross a border at the side and we need to change the origin corrdinates
-                    if (getDistance(tmpFluidData[index], [fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 1], fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 2]]) > fieldWidth / 2) {
-                        if (tmpFluidData[index][0] - fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 1] > fieldWidth / 2) {
+                    if (getDistance(tmpFluidData[fluidIndex], [fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 1], fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 2]]) > fieldWidth / 2) {
+                        if (tmpFluidData[fluidIndex][0] - fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 1] > fieldWidth / 2) {
                             // Fluidparticle moved over the edge on the right
-                            fluidOrigins[index][0] -= fieldWidth;
-                        } else if (tmpFluidData[index][0] - fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 1] < -fieldWidth / 2) {
+                            fluidOrigins[fluidIndex][0] -= fieldWidth;
+                        } else if (tmpFluidData[fluidIndex][0] - fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 1] < -fieldWidth / 2) {
                             // Fluidparticle moved over the edge on the right
-                            fluidOrigins[index][0] += fieldWidth;
+                            fluidOrigins[fluidIndex][0] += fieldWidth;
                         }
 
-                        if (tmpFluidData[index][1] - fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 2] > fieldWidth / 2) {
+                        if (tmpFluidData[fluidIndex][1] - fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 2] > fieldWidth / 2) {
                             // Fluidparticle moved over the edge on the bottom
-                            fluidOrigins[index][1] -= fieldWidth;
-                        } else if (tmpFluidData[index][1] - fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 2] < -fieldWidth / 2) {
+                            fluidOrigins[fluidIndex][1] -= fieldWidth;
+                        } else if (tmpFluidData[fluidIndex][1] - fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 2] < -fieldWidth / 2) {
                             // Fluidparticle moved over the edge on the top
-                            fluidOrigins[index][1] += fieldWidth;
+                            fluidOrigins[fluidIndex][1] += fieldWidth;
                         }
                     }
 
-                    if (tmpFluidData[index][2] < alphaDistance) {
-                        tmpDistance = getDistance(fluidOrigins[index], [fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 1], fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 2]]);
+                    if (tmpFluidData[fluidIndex][2] < alphaDistance) {
+                        tmpDistance = getDistance(fluidOrigins[fluidIndex], [fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 1], fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 2]]);
                     } else {
                         tmpDistance = alphaDistance;
                     }
 
-                    tmpFluidData[index] = [fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 1], fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 2], tmpDistance];
+                    tmpFluidData[fluidIndex] = [fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 1], fluid[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 2], tmpDistance];
                 }
 
                 // Fill the second array with fluid data of the next segment
@@ -976,6 +1000,8 @@ function resetFluidCells(index) {
                 let tmpRelativeTimePassed = i - Math.floor(i / saveFreq) * saveFreq;
                 let tmpRelativeIndex = Math.floor(i / saveFreq) % 2;
 
+                let fluidCellindex = 0;
+
                 for (let j = 0; j < fluidCells[tmpRelativeIndex][tmpRelativeTimePassed].length / 3; j++) {
                     if (fluidCells[tmpRelativeIndex][tmpRelativeTimePassed][j * 3] != undefined) {
                         let fluidColorIndex = Math.min(fluidCells[tmpRelativeIndex][tmpRelativeTimePassed][j * 3 + 1], fluidColorLength - 1);
@@ -983,9 +1009,9 @@ function resetFluidCells(index) {
 
                         let color = fluidCellColors[fluidColorPolarityIndex][fluidColorIndex];
 
-                        let index = fluidCells[tmpRelativeIndex][tmpRelativeTimePassed][j * 3];
+                        fluidCellindex += fluidCells[tmpRelativeIndex][tmpRelativeTimePassed][j * 3];
 
-                        fluidCellSprites[index].tint = color;
+                        fluidCellSprites[fluidCellindex].tint = color;
                     }
                 }
 

@@ -54,16 +54,14 @@ lineElement.addEventListener("click", function (event) {
 
     timePassed = Math.round(newTime);
 
-    let lastSaveAllIndex = Math.floor(timePassed / saveAllFreq) * (saveAllFreq / saveFreq);
+    // Substract one because saveFiles start with 0
+    let lastSaveAllIndex = Math.floor(timePassed / saveAllFreq) * (saveAllFreq / saveFreq) - 1;
 
     setTimeout(function() {
         reset(lastSaveAllIndex)
     }, 500);
 
     updateTime(timePassed);
-
-    // loadData(timePassed);
-    // play = false;
 });
 
 // ////////////////////////////// CONTROLS
@@ -124,12 +122,6 @@ closeheaderElement.addEventListener("click", function () {
         headerElement.style.marginTop = "-" + headerHeight + "px";
 
         resizeCanvas();
-
-        /*
-        setTimeout(() => {
-            resizeCanvas(5);
-        }, 500);
-        */
     }
 })
 

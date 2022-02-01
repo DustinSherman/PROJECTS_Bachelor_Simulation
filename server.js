@@ -38,7 +38,7 @@ let simulationsWaiting = [
 	// "0000000000000000000000000000",
 	// "1111111111111111111111111111",
 	// "1111000010100010101000101010",
-	"0001010001010001010100101000",
+	// "0001010001010001010100101000",
 	"0000001000000001000000100000",
 	// "1111110111101111101110111111"
 ];
@@ -59,7 +59,6 @@ app.use(function(request, response) {
 	if (request.accepts('html')) {
 		checkForSimulations();
 
-		// response.render('404', { url: request.url });
 		response.sendFile(__dirname + '/public/404.html');
 		return;
 	}
@@ -185,4 +184,4 @@ checkForSimulations();
 
 
 
-spawnChildProcess();
+// spawnChildProcess();

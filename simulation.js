@@ -17,7 +17,7 @@ const log = require("./log.js");
 // 12m / 24fps => 17280
 
 let timeEnd = 17280;
-let timePassed = 1;
+let timePassed = 0;
 exports.timePassed = timePassed;
 let timeSteps = [0, 9600, 14400];
 exports.timeSteps = timeSteps;
@@ -655,13 +655,24 @@ function gatherData() {
 
 		// Gather Cellular Automata Data
 		tmpCellularAutmataData = ca.getAliveCells();
+
+
+
+
+
+
+		console.log("Saving all data");
+		console.log("Fluid Array Length", tmpFluidData.length);
+
+
+
+
+
+
+
 	} else {
 		// Just save changed Data
-		if (timePassed > 0) {
-			tmpFluidData = Array.from(compareFluidArray(fluidData, preFluidData));
-		} else {
-			tmpFluidData = Array.from(fluidData);
-		}
+		tmpFluidData = Array.from(compareFluidArray(fluidData, preFluidData));
 
 		preFluidData = Array.from(fluidData);
 
@@ -712,6 +723,23 @@ function gatherData() {
 	// Save JSON Files
 	if (((timePassed) % data.saveFreq == 0 && timePassed != 0) || timePassed >= timeEnd) {
 		let saveIndex = ((timePassed) / data.saveFreq - 1);
+
+
+
+
+
+
+
+		if (timePassed % data.saveAllFreq == 0) {
+			console.log("Saving all to index", saveIndex);
+		}
+
+
+
+
+
+
+
 
 		data.save(saveIndex);
 	}
