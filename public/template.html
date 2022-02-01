@@ -138,6 +138,7 @@
 			let loc = window.location.pathname;
 			let simulationID = loc.substring(1, loc.lastIndexOf('/'));
 			let simulationFinished = false;
+			let loaderElement = document.getElementById('loader');
 
 			// Check if simulation is yet finished
 			fetch('../' + simulationID + '/data/setup.json')
@@ -147,8 +148,8 @@
 					simulationFinished = data['simulationFinished'];
 
 					if (simulationFinished) {
-						let loaderElement = document.getElementById('loader');
 						loaderElement.style.display = 'flex';
+						setupDataInit()
 					} else {
 						let remainingTimeBox = document.getElementById('remainingtime-box');
 						remainingTimeBox.style.display = 'flex';

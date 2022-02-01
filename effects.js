@@ -155,8 +155,8 @@ function updateLineTrails() {
 
 // ////////////////////////////// SHOCKWAVES
 
-function setShockwave(pos, strength) {
-	simulation.shockwaveData.push([pos[0], pos[1], strength]);
+function setShockwave(pos, strength, state) {
+	simulation.shockwaveData.push([pos[0], pos[1], strength, state]);
 }
 
 // ////////////////////////////// SWIRLS

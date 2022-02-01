@@ -505,7 +505,7 @@ class Particle {
 
 			log.logShockwave(this.pos, shockWaveStrength)
 
-			effects.setShockwave(this.pos, shockWaveStrength);
+			effects.setShockwave(this.pos, shockWaveStrength, Math.abs(this.state));
 		}
 
 		this.setFluidCellPolarity(center);

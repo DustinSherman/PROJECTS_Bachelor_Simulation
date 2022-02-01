@@ -182,7 +182,9 @@ function setup() {
 	// CELLULAR AUTOMATA
 	ca.init();
 
-	saveSetupData();
+	setupFileStructure();
+
+	saveSetupData(false);
 
 	if (logData) {
 		log.logBaseSettings();
@@ -246,7 +248,7 @@ function startPosition() {
 }
 
 // Save Setup Data to JSON
-function saveSetupData() {
+function saveSetupData(simulationFinished) {
 	let tmpData = {
 		'startIDHex': startHexString,
 		'startDate': startDate,
@@ -261,11 +263,15 @@ function saveSetupData() {
 		'caFreq': caFreq,
 		'endPhaseTime': timeSteps[timeSteps.length - 1],
 		'particleMaxState': stateMax,
-		'simulationFinished' : false
+		'simulationFinished' : simulationFinished
 	}
 
 	tmpData = JSON.stringify(tmpData);
 
+	fs.writeFileSync('public/' + startHexString + '/data/setup.json', tmpData);
+}
+
+function setupFileStructure() {
 	let dir = 'public/' + startHexString;
 	if (!fs.existsSync(dir)) {
 		fs.mkdirSync(dir);
@@ -282,9 +288,9 @@ function saveSetupData() {
 		fs.mkdirSync(logDir);
 	}
 
-	fs.writeFileSync(dataDir + '/setup.json', tmpData);
-
-	initData();
+	fs.copyFile('public/template.html', 'public/' + startHexString + '/index.html', (err) => {
+		if (err) throw err;
+	});
 }
 
 // ////////////////////////////// LOOP
@@ -386,8 +392,10 @@ function draw() {
 
 		log.saveReactionFile();
 
+		saveSetupData(true);
+
 		// Rename record file to indicate simulation is finished
-		fs.rename('public/' + startHexString + '/log/_record_' + startHexString + '.txt', 'public/' + startHexString + '/log/record_' + startHexString + '.txt', function (error) {});
+		// fs.rename('public/' + startHexString + '/log/_record_' + startHexString + '.txt', 'public/' + startHexString + '/log/record_' + startHexString + '.txt', function (error) {});
 
 		// process.stdout.clearLine();
 		// process.stdout.cursorTo(0);
@@ -594,17 +602,6 @@ function endPhase() {
 
 // ////////////////////////////// DATA
 
-function initData() {
-	let dir = 'public/' + startHexString + '/';
-	if (!fs.existsSync(dir)) {
-		fs.mkdirSync(dir);
-	}
-
-	fs.copyFile('public/template.html', 'public/' + startHexString + '/index.html', (err) => {
-		if (err) throw err;
-	});
-}
-
 let logFreq = 1920;
 
 function gatherData() {
@@ -651,7 +648,7 @@ function gatherData() {
 
 		for (let i = 0; i < fluid.fluidCells.length; i++) {
 			let index = i - prevFluidCellIndex;
-			prevFluidCellIndex = index;
+			prevFluidCellIndex = i;
 
 			fluidCellData.push(index, Math.min(fluid.fluidCells[i][0], fluidCellMaxCount), fluid.fluidCells[i][1]);
 		}
@@ -773,13 +770,24 @@ function gatherData() {
 
 
 
-		
-		const fileName = 'public/' + startHexString + '/data/setup.json';
-		const file = require(fileName);
-	
-		file.simulationFinished = true;
-	
-		fs.writeFile(fileName, JSON.stringify(file));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	}
 }
 

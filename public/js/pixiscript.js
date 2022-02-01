@@ -199,7 +199,7 @@ function draw() {
     }
 
     if (play) {
-        //drawFluidCells();
+        drawFluidCells();
         drawParticles();
         drawFluid();
         drawCellularAutomata();
@@ -341,12 +341,13 @@ function drawParticles() {
                     particleTorusVerticalSprites[i].scale.set(particleScale * scale, particleScale * scale);
             }
 
-            // Add shine effect to particles if they are in the last state
-            if (Math.abs(particles[relativeIndex][relativeTimePassed][i][2]) == particleMaxState) {
+            // Add shine effect to particles if they are in the last state && and have more than 8 merged Particles includiing itself
+            if (Math.abs(particles[relativeIndex][relativeTimePassed][i][2]) == particleMaxState &&
+                particles[relativeIndex][relativeTimePassed][i][3] >= 8) {
                 let particleCenter = [particlePosition[0] + particleScale / 2, particlePosition[1] + particleScale / 2];
 
                 // Standard Values
-                let shineLength = .4;
+                let shineLength = .2;
 
                 // Temporary Values
                 let totalLength = Math.max(shineLength * particles[relativeIndex][relativeTimePassed][i][3], 8);
@@ -564,20 +565,14 @@ function drawFluidCells() {
     let index = 0;
 
     for (let i = 0; i < fluidCells[relativeIndex][relativeTimePassed].length / 3; i++) {
-        if (fluidCells[relativeIndex][relativeTimePassed][i * 3] != undefined) {
-            let fluidColorIndex = Math.min(fluidCells[relativeIndex][relativeTimePassed][i * 3 + 1], fluidColorLength - 1);
-            let fluidColorPolarityIndex = Math.min(Math.max(fluidCells[relativeIndex][relativeTimePassed][i * 3 + 2], -fluidColorPolarityLength), fluidColorPolarityLength) + fluidColorPolarityLength;
+        let fluidColorIndex = Math.min(fluidCells[relativeIndex][relativeTimePassed][i * 3 + 1], fluidColorLength - 1);
+        let fluidColorPolarityIndex = Math.min(Math.max(fluidCells[relativeIndex][relativeTimePassed][i * 3 + 2], -fluidColorPolarityLength), fluidColorPolarityLength) + fluidColorPolarityLength;
 
-            let color = fluidCellColors[fluidColorPolarityIndex][fluidColorIndex];
+        let color = fluidCellColors[fluidColorPolarityIndex][fluidColorIndex];
 
-            index += fluidCells[relativeIndex][relativeTimePassed][i * 3];
+        index += fluidCells[relativeIndex][relativeTimePassed][i * 3];
 
-            console.log(index, fluidCells[relativeIndex][relativeTimePassed][i * 3]);
-
-            console.log("Fluidcelspriteslength", fluidCellSprites.length)
-
-            fluidCellSprites[index].tint = color;
-        }
+        fluidCellSprites[index].tint = color;
     }
 
     // In the endPhase decrease the alpha of all fluid Cells step by step
