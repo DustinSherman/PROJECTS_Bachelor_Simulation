@@ -207,7 +207,8 @@ function draw() {
         updateLineTrails();
         drawLineTrails();
 
-        drawShockwaves();
+        // drawShockwaves();
+        drawTestShockwaves();
 
         timePassed++;
         relativeTimePassed = timePassed - Math.floor(timePassed / saveFreq) * saveFreq;
@@ -737,6 +738,83 @@ function drawLineTrails() {
 
 // ////////////////////////////// SHOCKWAVES //////////////////////////////
 
+
+
+
+
+
+
+
+
+
+// TESTING POSITION AND SCALE OF SHOCKWAVES
+
+let positionIndex = 0;
+
+function drawTestShockwaves() {
+    let newShockwave = false;
+
+    if (timePassed % 200 == 0) {
+        // Rotate position from center, top left, top right, bottom, left, bottom right
+        let positions = [[fieldWidth/2, fieldWidth/2], [0, 0], [fieldWidth, 0], [0, fieldWidth], [fieldWidth, fieldWidth]];
+
+
+
+        shockwaveFilters.push(new PIXI.filters.ShockwaveFilter());
+
+        let strength = 64;
+
+        // Set shockwaveFilter
+        shockwaveFilters[shockwaveFilters.length - 1].center.x = positions[positionIndex][0];
+        shockwaveFilters[shockwaveFilters.length - 1].center.y = positions[positionIndex][1];
+        shockwaveFilters[shockwaveFilters.length - 1].amplitude = 64;
+        shockwaveFilters[shockwaveFilters.length - 1].wavelength = 32;
+        shockwaveFilters[shockwaveFilters.length - 1].radius = 1128;
+
+        positionIndex++;
+        positionIndex %= 5;
+    }
+
+    // Actualize filters if a new filter is added
+    if (newShockwave) {
+        viewContainer.filters = shockwaveFilters;
+    }
+
+    // Increase Timer for shockwaves
+    for (let i = 0; i < shockwaveFilters.length; i++) {
+        shockwaveFilters[i].time += shockwaveTimingBase;
+    }
+
+    // Delete passed shockwaves
+    for (let i = shockwaveFilters.length - 1; i >= 0; i--) {
+        if (shockwaveFilters[i].time > 1) {
+            shockwaveFilters.splice(i, 1);
+            viewContainer.filters = shockwaveFilters;
+        }
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function drawShockwaves() {
     // Add new Shockwave Filters
     let newShockwave = false;
@@ -833,7 +911,7 @@ function reset(time) {
         []
     ];
 
-    resetLineTrails(time);
+    resetLineTrails(0);
 }
 
 function resetParticles() {

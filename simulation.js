@@ -655,21 +655,6 @@ function gatherData() {
 
 		// Gather Cellular Automata Data
 		tmpCellularAutmataData = ca.getAliveCells();
-
-
-
-
-
-
-		console.log("Saving all data");
-		console.log("Fluid Array Length", tmpFluidData.length);
-
-
-
-
-
-
-
 	} else {
 		// Just save changed Data
 		tmpFluidData = Array.from(compareFluidArray(fluidData, preFluidData));
@@ -723,24 +708,6 @@ function gatherData() {
 	// Save JSON Files
 	if (((timePassed) % data.saveFreq == 0 && timePassed != 0) || timePassed >= timeEnd) {
 		let saveIndex = ((timePassed) / data.saveFreq - 1);
-
-
-
-
-
-
-
-		if (timePassed % data.saveAllFreq == 0) {
-			console.log("Saving all to index", saveIndex);
-		}
-
-
-
-
-
-
-
-
 		data.save(saveIndex);
 	}
 	
