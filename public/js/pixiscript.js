@@ -10,7 +10,7 @@ let app = new Application({
     autoResize: true,
     resolution: devicePixelRatio,
     backgroundColor: 0x000000,
-    antialias: true
+    // antialias: true
 });
 
 // Sprites
@@ -87,8 +87,13 @@ const lineTrailContainer = new PIXI.Container();
 // explosions
 let explosion = [];
 
+// Filters
+let fxaaFilter;
+
 // shockwaves
 let shockwaveFilters = [];
+let shockwaveTimers = [];
+let shockwaveFilterVals = {};
 let shockwaveAmplitudeBase = 16;
 let shockwaveWavelengthBase = 32;
 let shockwaveRadiusBase = 8;
@@ -149,6 +154,7 @@ function init() {
 
     initCellularAutomata();
     initFluid();
+    initFilters();
 
     // Set Animation Vals
     fpsInterval = 1000 / fps;
@@ -207,8 +213,7 @@ function draw() {
         updateLineTrails();
         drawLineTrails();
 
-        // drawShockwaves();
-        drawTestShockwaves();
+        drawShockwaves();
 
         timePassed++;
         relativeTimePassed = timePassed - Math.floor(timePassed / saveFreq) * saveFreq;
@@ -738,82 +743,20 @@ function drawLineTrails() {
 
 // ////////////////////////////// SHOCKWAVES //////////////////////////////
 
-
-
-
-
-
-
-
-
-
-// TESTING POSITION AND SCALE OF SHOCKWAVES
-
-let positionIndex = 0;
-
-function drawTestShockwaves() {
-    let newShockwave = false;
-
-    if (timePassed % 200 == 0) {
-        // Rotate position from center, top left, top right, bottom, left, bottom right
-        let positions = [[fieldWidth/2, fieldWidth/2], [0, 0], [fieldWidth, 0], [0, fieldWidth], [fieldWidth, fieldWidth]];
-
-
-
-        shockwaveFilters.push(new PIXI.filters.ShockwaveFilter());
-
-        let strength = 64;
-
-        // Set shockwaveFilter
-        shockwaveFilters[shockwaveFilters.length - 1].center.x = positions[positionIndex][0];
-        shockwaveFilters[shockwaveFilters.length - 1].center.y = positions[positionIndex][1];
-        shockwaveFilters[shockwaveFilters.length - 1].amplitude = 64;
-        shockwaveFilters[shockwaveFilters.length - 1].wavelength = 32;
-        shockwaveFilters[shockwaveFilters.length - 1].radius = 1128;
-
-        positionIndex++;
-        positionIndex %= 5;
-    }
-
-    // Actualize filters if a new filter is added
-    if (newShockwave) {
-        viewContainer.filters = shockwaveFilters;
-    }
-
-    // Increase Timer for shockwaves
-    for (let i = 0; i < shockwaveFilters.length; i++) {
-        shockwaveFilters[i].time += shockwaveTimingBase;
-    }
-
-    // Delete passed shockwaves
-    for (let i = shockwaveFilters.length - 1; i >= 0; i--) {
-        if (shockwaveFilters[i].time > 1) {
-            shockwaveFilters.splice(i, 1);
-            viewContainer.filters = shockwaveFilters;
-        }
-    }
-
+function initFilters() {
+    PIXI.settings.PRECISION_FRAGMENT = PIXI.PRECISION.HIGH;
+    fxaaFilter = new PIXI.filters.FXAAFilter();
 }
 
+function refreshFilters() {
+    viewContainer.filters = [];
 
+    viewContainer.filters.push(fxaaFilter);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    for (let i = 0; i < shockwaveFilters.length; i++) {
+        viewContainer.filters.push(shockwaveFilters[i]);
+    }
+}
 
 function drawShockwaves() {
     // Add new Shockwave Filters
@@ -823,31 +766,49 @@ function drawShockwaves() {
 
         let strength = shockwaveData[relativeIndex][relativeTimePassed][i][2];
 
+        // Set ShockwaveFilter Bas Values
+        let tmpShockwaveFilterVals = {
+            x: shockwaveData[relativeIndex][relativeTimePassed][i][0],
+            y: shockwaveData[relativeIndex][relativeTimePassed][i][1],
+            amplitude: Math.round(shockwaveAmplitudeBase * strength/shockwaveStrengthBase),
+            waveLength: Math.round(shockwaveWavelengthBase* strength/shockwaveStrengthBase),
+            radius: shockwaveRadiusBase * strength
+        }
+
+        shockwaveFilterVals.push(tmpShockwaveFilterVals);
+        shockwaveTimers.push(0);
+
         // Set shockwaveFilter
-        shockwaveFilters[shockwaveFilters.length - 1].center.x = shockwaveData[relativeIndex][relativeTimePassed][i][0];
-        shockwaveFilters[shockwaveFilters.length - 1].center.y = shockwaveData[relativeIndex][relativeTimePassed][i][1];
-        shockwaveFilters[shockwaveFilters.length - 1].amplitude = Math.round(shockwaveAmplitudeBase * strength/shockwaveStrengthBase);
-        shockwaveFilters[shockwaveFilters.length - 1].wavelength = Math.round(shockwaveWavelengthBase* strength/shockwaveStrengthBase);
-        shockwaveFilters[shockwaveFilters.length - 1].radius = shockwaveRadiusBase * strength;
+        shockwaveFilters[shockwaveFilters.length - 1].center.x = tmpShockwaveFilterVals.x;
+        shockwaveFilters[shockwaveFilters.length - 1].center.y = tmpShockwaveFilterVals.y;
+        shockwaveFilters[shockwaveFilters.length - 1].amplitude = tmpShockwaveFilterVals.amplitude;
+        shockwaveFilters[shockwaveFilters.length - 1].wavelength = tmpShockwaveFilterVals.waveLength;
+        shockwaveFilters[shockwaveFilters.length - 1].radius = tmpShockwaveFilterVals.radius;
 
         newShockwave = true;
     }
 
     // Actualize filters if a new filter is added
     if (newShockwave) {
-        viewContainer.filters = shockwaveFilters;
+        // viewContainer.filters = shockwaveFilters;
+        refreshFilters();
     }
 
     // Increase Timer for shockwaves
-    for (let i = 0; i < shockwaveFilters.length; i++) {
-        shockwaveFilters[i].time += shockwaveTimingBase;
+    for (let i = 1; i < shockwaveFilters.length; i++) {
+        shockwaveTimers[i] += shockwaveTimingBase;
+        // Scale Timing to screen scale
+        shockwaveFilters[i].time = shockwaveTimers[i] * newScale.x;
     }
 
     // Delete passed shockwaves
     for (let i = shockwaveFilters.length - 1; i >= 0; i--) {
         if (shockwaveFilters[i].time > 1) {
             shockwaveFilters.splice(i, 1);
-            viewContainer.filters = shockwaveFilters;
+            shockwaveFilterVals.splice(i, 1);
+            shockwaveTimers[i].splice(i, 1);
+            refreshFilters();
+            // viewContainer.filters = shockwaveFilters;
         }
     }
 }

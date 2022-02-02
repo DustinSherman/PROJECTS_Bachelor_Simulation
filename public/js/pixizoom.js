@@ -40,9 +40,14 @@ function zoom(s, x, y) {
 
     app.stage.scale.x = newScale.x;
     app.stage.scale.y = newScale.y;
-    changePos({x: app.stage.x - (newScreenPos.x - x), y: app.stage.y - (newScreenPos.y - y)});
+
+    let newPos = {x: app.stage.x - (newScreenPos.x - x), y: app.stage.y - (newScreenPos.y - y)};
+
+    changePos(newPos);
 
     scaleSpan.innerHTML = newScale.x.toFixed(2) + "x";
+
+    scaleShockwaves(newScale.x, newPos);
 };
 
 function changePos(pos) {
@@ -89,4 +94,15 @@ function changePos(pos) {
     }
 
     minimapDiv.style.margin = marginTop + "px 0 0 " + marginLeft + "px";
+}
+
+function scaleShockwaves(scale, newPos) {
+    for (let i = 0; i < shockwaveFilters.length; i++) {
+        shockwaveFilters[i].amplitude = shockwaveFilterVals[i].amplitude * scale;
+        shockwaveFilters[i].wavelength = shockwaveFilterVals[i].waveLength * scale;
+        shockwaveFilters[i].radius = shockwaveFilterVals[i].radius * scale;
+    
+        shockwaveFilters[i].center.x = shockwaveFilterVals[i].x * scale + (newPos.x);
+        shockwaveFilters[i].center.y = shockwaveFilterVals[i].y * scale + (newPos.y);
+    }
 }

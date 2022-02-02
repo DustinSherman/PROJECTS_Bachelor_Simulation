@@ -482,7 +482,7 @@ class Particle {
 			} else if (reactionResult == 2) {
 				let form = 1;
 				// Set size to increase the closer it gets to the end
-				let size = Math.round(cellularAutomataSize[0] + multi * Math.max(simulation.timePassed/simulation.timeSteps[timeSteps.length - 1], .2) * cellularAutomataSize[1]);
+				let size = Math.round(cellularAutomataSize[0] + multi * Math.max(simulation.timePassed/simulation.timeSteps[simulation.timeSteps.length - 1], .2) * cellularAutomataSize[1]);
 
 				this.setCellularAutomata(center, size, form, binaryResult);
 			} else if (reactionResult == 3) {
