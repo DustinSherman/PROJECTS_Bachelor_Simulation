@@ -13,6 +13,8 @@ let app = new Application({
     // antialias: true
 });
 
+let screenScale = 1;
+
 // Sprites
 let particleSprites = [];
 let particleTorusHoricontalSprites = [];
@@ -97,7 +99,7 @@ let shockwaveFilterVals = {};
 let shockwaveAmplitudeBase = 16;
 let shockwaveWavelengthBase = 32;
 let shockwaveRadiusBase = 8;
-let shockwaveTimingBase = .01;
+let shockwaveTimingBase = .002;
 let shockwaveStrengthBase = 16;
 
 // Reset / Timebar
@@ -779,8 +781,8 @@ function drawShockwaves() {
         shockwaveTimers.push(0);
 
         // Set shockwaveFilter
-        shockwaveFilters[shockwaveFilters.length - 1].center.x = tmpShockwaveFilterVals.x;
-        shockwaveFilters[shockwaveFilters.length - 1].center.y = tmpShockwaveFilterVals.y;
+        shockwaveFilters[shockwaveFilters.length - 1].center.x = tmpShockwaveFilterVals.x * screenScale;
+        shockwaveFilters[shockwaveFilters.length - 1].center.y = tmpShockwaveFilterVals.y * screenScale;
         shockwaveFilters[shockwaveFilters.length - 1].amplitude = tmpShockwaveFilterVals.amplitude;
         shockwaveFilters[shockwaveFilters.length - 1].wavelength = tmpShockwaveFilterVals.waveLength;
         shockwaveFilters[shockwaveFilters.length - 1].radius = tmpShockwaveFilterVals.radius;
@@ -1218,9 +1220,13 @@ function resize() {
     app.renderer.resize(parent.clientWidth, parent.clientHeight);
 
     if (app.screen.height < app.screen.width) {
+        screenScale = app.screen.height/viewContainer.height;
+
         viewContainer.height = app.screen.height;
         viewContainer.width = app.screen.height;
     } else {
+        screenScale = app.screen.width/viewContainer.width;
+
         viewContainer.height = app.screen.width;
         viewContainer.width = app.screen.width;
     }

@@ -96,7 +96,9 @@ function changePos(pos) {
     minimapDiv.style.margin = marginTop + "px 0 0 " + marginLeft + "px";
 }
 
-function scaleShockwaves(scale, newPos) {
+function scaleShockwaves(tmpScale, newPos) {
+    let scale = tmpScale * screenScale;
+
     for (let i = 0; i < shockwaveFilters.length; i++) {
         shockwaveFilters[i].amplitude = shockwaveFilterVals[i].amplitude * scale;
         shockwaveFilters[i].wavelength = shockwaveFilterVals[i].waveLength * scale;
