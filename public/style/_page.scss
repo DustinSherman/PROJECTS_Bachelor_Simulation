@@ -65,3 +65,21 @@ body.fullscreen {
     max-height: 100% !important;
     overflow: hidden;
 }
+
+// 404 Seite
+
+#simulationlist {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: space-evenly;
+
+    li {
+        margin: 0;
+        list-style-type: none;
+
+        a {
+            text-decoration: underline;
+        }
+    }
+}

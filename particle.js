@@ -500,13 +500,15 @@ class Particle {
 		*/
 
 		if (this.tmpCalcParticles.length > this.reactionCount) {
-			let shockwaveMulti = [32, 28, 24, 20, 16, 15, 14, 13, 12, 11, 10, 0];
+			if (Math.abs(this.state) > Math.round(simulation.stateMax/3)) {
+				let shockwaveMulti = [32, 28, 24, 20, 16, 15, 14, 13, 12, 11, 10, 0];
 
-			let shockWaveStrength = shockwaveMulti[Math.abs(this.state)];
-
-			log.logShockwave(this.pos, shockWaveStrength)
-
-			effects.setShockwave(this.pos, shockWaveStrength, Math.abs(this.state));
+				let shockWaveStrength = shockwaveMulti[Math.abs(this.state)];
+	
+				log.logShockwave(this.pos, shockWaveStrength)
+	
+				effects.setShockwave(this.pos, shockWaveStrength, Math.abs(this.state));
+			}
 		}
 
 		this.setFluidCellPolarity(center);

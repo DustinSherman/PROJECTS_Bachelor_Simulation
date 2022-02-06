@@ -14,6 +14,7 @@ let app = new Application({
 });
 
 let screenScale = 1;
+let viewScale = 1;
 
 // Sprites
 let particleSprites = [];
@@ -95,11 +96,11 @@ let fxaaFilter;
 // shockwaves
 let shockwaveFilters = [];
 let shockwaveTimers = [];
-let shockwaveFilterVals = {};
+let shockwaveFilterVals = [];
 let shockwaveAmplitudeBase = 16;
 let shockwaveWavelengthBase = 32;
 let shockwaveRadiusBase = 8;
-let shockwaveTimingBase = .002;
+let shockwaveTimingBase = .01;
 let shockwaveStrengthBase = 16;
 
 // Reset / Timebar
@@ -751,53 +752,32 @@ function initFilters() {
 }
 
 function refreshFilters() {
-    viewContainer.filters = [];
+    let tmpFilters = [];
 
-    viewContainer.filters.push(fxaaFilter);
+    tmpFilters.push(fxaaFilter)
 
     for (let i = 0; i < shockwaveFilters.length; i++) {
-        viewContainer.filters.push(shockwaveFilters[i]);
+        tmpFilters.push(shockwaveFilters[i]);
     }
+    
+    viewContainer.filters = tmpFilters;
 }
 
 function drawShockwaves() {
     // Add new Shockwave Filters
-    let newShockwave = false;
     for (let i = 0; i < shockwaveData[relativeIndex][relativeTimePassed].length; i++) {
-        shockwaveFilters.push(new PIXI.filters.ShockwaveFilter());
-
         let strength = shockwaveData[relativeIndex][relativeTimePassed][i][2];
 
-        // Set ShockwaveFilter Bas Values
-        let tmpShockwaveFilterVals = {
-            x: shockwaveData[relativeIndex][relativeTimePassed][i][0],
-            y: shockwaveData[relativeIndex][relativeTimePassed][i][1],
-            amplitude: Math.round(shockwaveAmplitudeBase * strength/shockwaveStrengthBase),
-            waveLength: Math.round(shockwaveWavelengthBase* strength/shockwaveStrengthBase),
-            radius: shockwaveRadiusBase * strength
-        }
+        let center = [shockwaveData[relativeIndex][relativeTimePassed][i][0], shockwaveData[relativeIndex][relativeTimePassed][i][1]];
+        let amplitude = Math.round(shockwaveAmplitudeBase * strength/shockwaveStrengthBase);
+        let waveLength = Math.round(shockwaveWavelengthBase* strength/shockwaveStrengthBase);
+        let radius = shockwaveRadiusBase * strength;
 
-        shockwaveFilterVals.push(tmpShockwaveFilterVals);
-        shockwaveTimers.push(0);
-
-        // Set shockwaveFilter
-        shockwaveFilters[shockwaveFilters.length - 1].center.x = tmpShockwaveFilterVals.x * screenScale;
-        shockwaveFilters[shockwaveFilters.length - 1].center.y = tmpShockwaveFilterVals.y * screenScale;
-        shockwaveFilters[shockwaveFilters.length - 1].amplitude = tmpShockwaveFilterVals.amplitude;
-        shockwaveFilters[shockwaveFilters.length - 1].wavelength = tmpShockwaveFilterVals.waveLength;
-        shockwaveFilters[shockwaveFilters.length - 1].radius = tmpShockwaveFilterVals.radius;
-
-        newShockwave = true;
-    }
-
-    // Actualize filters if a new filter is added
-    if (newShockwave) {
-        // viewContainer.filters = shockwaveFilters;
-        refreshFilters();
+        addShockwave(center, amplitude, waveLength, radius);
     }
 
     // Increase Timer for shockwaves
-    for (let i = 1; i < shockwaveFilters.length; i++) {
+    for (let i = 0; i < shockwaveFilters.length; i++) {
         shockwaveTimers[i] += shockwaveTimingBase;
         // Scale Timing to screen scale
         shockwaveFilters[i].time = shockwaveTimers[i] * newScale.x;
@@ -808,11 +788,55 @@ function drawShockwaves() {
         if (shockwaveFilters[i].time > 1) {
             shockwaveFilters.splice(i, 1);
             shockwaveFilterVals.splice(i, 1);
-            shockwaveTimers[i].splice(i, 1);
+            shockwaveTimers.splice(i, 1);
             refreshFilters();
-            // viewContainer.filters = shockwaveFilters;
         }
     }
+}
+
+function addShockwave(center, amplitude, waveLength, radius) {
+    shockwaveFilters.push(new PIXI.filters.ShockwaveFilter());
+
+    // Set ShockwaveFilter Base Values
+    let tmpShockwaveFilterVals = {
+        x: center[0],
+        y: center[1],
+        amplitude: amplitude,
+        waveLength: waveLength,
+        radius: radius
+    }
+
+    shockwaveFilterVals.push(tmpShockwaveFilterVals);
+    shockwaveTimers.push(0);
+
+    // Set shockwaveFilter
+    shockwaveFilters[shockwaveFilters.length - 1].center.x = tmpShockwaveFilterVals.x * viewScale;
+    shockwaveFilters[shockwaveFilters.length - 1].center.y = tmpShockwaveFilterVals.y * viewScale;
+    shockwaveFilters[shockwaveFilters.length - 1].amplitude = tmpShockwaveFilterVals.amplitude;
+    shockwaveFilters[shockwaveFilters.length - 1].wavelength = tmpShockwaveFilterVals.waveLength;
+    shockwaveFilters[shockwaveFilters.length - 1].radius = tmpShockwaveFilterVals.radius;
+
+    // Check for torus
+    let tmpTorusDirections = getTorus([tmpShockwaveFilterVals.x, tmpShockwaveFilterVals.y], tmpShockwaveFilterVals.radius, fieldWidth);
+
+    for (let i = 0; i < tmpTorusDirections.length; i++) {
+        shockwaveFilters.push(new PIXI.filters.ShockwaveFilter());
+
+        tmpShockwaveFilterVals.x = center[0] + fieldWidth * tmpTorusDirections[0];
+        tmpShockwaveFilterVals.y = center[1] + fieldWidth * tmpTorusDirections[0];
+
+        shockwaveFilterVals.push(tmpShockwaveFilterVals);
+        shockwaveTimers.push(0);
+
+        // Set shockwaveFilter
+        shockwaveFilters[shockwaveFilters.length - 1].center.x = tmpShockwaveFilterVals.x * viewScale;
+        shockwaveFilters[shockwaveFilters.length - 1].center.y = tmpShockwaveFilterVals.y * viewScale;
+        shockwaveFilters[shockwaveFilters.length - 1].amplitude = tmpShockwaveFilterVals.amplitude;
+        shockwaveFilters[shockwaveFilters.length - 1].wavelength = tmpShockwaveFilterVals.waveLength;
+        shockwaveFilters[shockwaveFilters.length - 1].radius = tmpShockwaveFilterVals.radius;
+    }
+    
+    refreshFilters();
 }
 
 // ////////////////////////////// RESET //////////////////////////////
@@ -1212,6 +1236,8 @@ function checkReset() {
 
 window.addEventListener('resize', resize);
 
+let screenOffset = [];
+
 function resize() {
     // Get the parent element
     const parent = app.view.parentNode;
@@ -1231,8 +1257,53 @@ function resize() {
         viewContainer.width = app.screen.width;
     }
 
+    viewScale = viewContainer.width/fieldWidth;
+
+    console.log("Resize to", viewContainer.width, viewContainer.height);
+
+    screenOffset = [app.screen.width/2 - viewContainer.width/2, app.screen.height/2 - viewContainer.height/2];
+
     // You can use the 'screen' property as the renderer visible
     // area, this is more useful than view.width/height because
     // it handles resolution
     viewContainer.position.set(app.screen.width/2 - viewContainer.width/2, app.screen.height/2 - viewContainer.height/2);
+}
+
+function getTorus(center, radius, width) {
+    let torusDirections = [];
+
+    // overlap left
+    if (center[0] - radius < 0) {
+        torusDirections.push([1, 0]);
+    }
+    // overlap top left
+    if (center[0] - radius < 0 && center[1] - radius < 0) {
+        torusDirections.push([1, 1]);
+    }
+    // overlap top
+    if (center[1] - radius < 0) {
+        torusDirections.push([0, 1]);
+    }
+    // overlap top right
+    if (center[0] + radius >= width && center[1] - radius < 0) {
+        torusDirections.push([-1, 1]);
+    }
+    // overlap right
+    if (center[0] + radius >= width) {
+        torusDirections.push([-1, 0]);
+    }
+    // overlap right bottom
+    if (center[0] + radius >= width && center[1] + radius >= width) {
+        torusDirections.push([-1, -1]);
+    }
+    // overlap bottom
+    if (center[1] + radius >= width) {
+        torusDirections.push([0, -1]);
+    }
+    // overlap bottom left
+    if (center[0] - radius < 0 && center[1] + radius >= width) {
+        torusDirections.push([1, -1]);
+    }
+
+    return torusDirections;
 }

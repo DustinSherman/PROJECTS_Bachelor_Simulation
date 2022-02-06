@@ -37,14 +37,12 @@ let simulationsWaiting = [
 	"0101010101010101010101010101",
 	"0000000000000000000000000000",
 	"1111111111111111111111111111",
-	// "1111000010100010101000101010",
-	// "0001010001010001010100101000",
+	"1111000010100010101000101010",
+	"0001010001010001010100101000",
 	"0000001000000001000000100000",
-	// "1111110111101111101110111111"
+	"1111110111101111101110111111"
 ];
 let simulationRunning = false;
-
-let simulationsFinished = [];
 
 // SERVER
 app.set('port', (process.env.PORT || port));
@@ -52,21 +50,17 @@ app.set('port', (process.env.PORT || port));
 // Add Folder public for CSS and JS
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use(function(request, response) {
-	response.status(404);
+// Handle GET Requests
+app.get('/', (request, response) => {
+	// response.send('index.html');
 
-	// respond with html page
-	if (request.accepts('html')) {
-		checkForSimulations();
-
-		response.sendFile(__dirname + '/public/404.html');
-		return;
-	}
+	response.sendFile(__dirname + '/index.html');
 })
 
-app.get('/', function (response) {
-	response.sendFile(__dirname + '/index.html');
-});
+// Handle 404
+app.use((request, response) => {	
+	response.status(404).sendFile(__dirname + '/public/404.html');
+})
 
 // Handle Post Requests
 app.post('/', function (request, response) {
@@ -121,32 +115,6 @@ function spawnChildProcess() {
 	})
 }
 
-let standardFolders = ['js', 'style', 'assets'];
-
-function checkForSimulations() {
-	let folders;
-	fs.readdir('./public', { withFileTypes: true }, (error, files) => {
-		if (error) throw error;
-		folders = files
-			.filter((item) => item.isDirectory())
-			.map((item) => item.name);
-
-		// Remove standard folders from the list
-		for (let i = folders.length - 1; i >= 0 ; i--) {
-			for (let j = 0; j < standardFolders.length; j++) {
-				if (folders[i] == standardFolders[j]) {
-					folders.splice(i, 1);
-					break;
-				}
-			}
-		}
-
-
-
-		// console.log(folders);
-	});
-}
-
 function dateString() {
 	let currentDate = new Date();
 
@@ -168,9 +136,6 @@ function dateString() {
 
 	return dateString;
 }
-
-// When the server starts check for all allready simulated simulations
-checkForSimulations();
 
 
 

@@ -16,8 +16,9 @@ const log = require("./log.js");
 // VARIABLES
 // 12m / 24fps => 17280
 
-let timeEnd = 17280;
-let timePassed = 0;
+// let timeEnd = 17280;
+let timeEnd = 120;
+let timePassed = 1;
 exports.timePassed = timePassed;
 let timeSteps = [0, 9600, 14400];
 exports.timeSteps = timeSteps;
@@ -147,11 +148,36 @@ process.on("message", message => {
 	setup();
 
 	if (timePassed >= timeEnd) {
+		let tmpData;
+
+		// Get all simulations and add the current one
+		if (fs.existsSync('public/simulations.json')) {
+			fs.readFile('public/simulations.json', (err, data) => {
+				if (err) {
+					throw err;
+				}
+				
+				tmpData = JSON.parse(data);
+				tmpData += ', ' + startHexString;
+				tmpData = JSON.stringify(tmpData);
+				
+				writeSimulationsFile(tmpData);
+			});
+		} else {
+			tmpData = JSON.stringify(startHexString);
+
+			writeSimulationsFile(tmpData);
+		}
+	}
+})
+
+function writeSimulationsFile(data) {
+	fs.writeFile('public/simulations.json', data, function() {
 		console.log("end   " + startHexString);
 
 		process.exit();
-	}
-})
+	});
+}
 
 // ////////////////////////////// SETUP
 
@@ -189,7 +215,7 @@ function setup() {
 	if (logData) {
 		log.logBaseSettings();
 	}
-	
+
 	draw();
 }
 
@@ -392,14 +418,7 @@ function draw() {
 
 		log.saveReactionFile();
 
-		saveSetupData(true);
-
-		// Rename record file to indicate simulation is finished
-		// fs.rename('public/' + startHexString + '/log/_record_' + startHexString + '.txt', 'public/' + startHexString + '/log/record_' + startHexString + '.txt', function (error) {});
-
-		// process.stdout.clearLine();
-		// process.stdout.cursorTo(0);
-		// console.log("Simulation end at " + timePassed + ". Total Time: " + Math.floor((Date.now() - realtimeStart) / 60000) + "m " + Math.floor((Date.now() - realtimeStart) % 60) + "s");
+		saveSetupData(true);	
 	}
 };
 
@@ -739,51 +758,6 @@ function gatherData() {
 		console.log(saveString);
 		// console.log("Memory Used", process.memoryUsage());
 	};
-
-	// Change simulationFinshed value in setup.json file
-	if (timePassed >= timeEnd) {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	}
 }
 
 let getCurrentFPSPrevTime = 0;

@@ -47,7 +47,7 @@ function zoom(s, x, y) {
 
     scaleSpan.innerHTML = newScale.x.toFixed(2) + "x";
 
-    scaleShockwaves(newScale.x, newPos);
+    scaleShockwaves(viewContainer.width/fieldWidth, newPos);
 };
 
 function changePos(pos) {

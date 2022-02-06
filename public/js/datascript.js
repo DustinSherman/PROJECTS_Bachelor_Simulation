@@ -148,8 +148,6 @@ function loadFile(index, relativeIndex, dataObject, fileName, callback, paramete
     // Reset Array
     dataObject[relativeIndex] = [];
 
-    // console.log("Load data", (pad(index, 6) + '_' + fileName), "in", (fileName + "[" + relativeIndex + "]"));
-
     fetch('../' + tmpPath + '/data/' + pad(index, 6) + '_' + fileName + '.json')
         .then(response => response.json())
         .then(function (data) {
@@ -165,13 +163,11 @@ function checkForInit() {
     let finished = true;
     // Only check if the first array is filled, because the second one will be filled right at the beginnig
     for (let i = 0; i < dataObjects.length; i++) {
+
         if (dataObjects[i][0].length != saveFreq) {
             finished = false;
-
-            // break;
         }
     }
-
 
     if (finished) {
         console.log("Loading files finished. Starting Init");
