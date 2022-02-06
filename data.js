@@ -15,19 +15,15 @@ let fluidData = [];
 let fluidCellData = [];
 let cellularAutomataData = [];
 let lineTrailsData = [];
-let linePolygonsData = [];
 let shockwaveData = [];
-// let explosionData = [];
 
-function addData(tmpParticleData, tmpFluidData, tmpFluidCellData, tmpcaData, tmpLineTrailsData, tmpShockwaveData/*, tmpExplosionData*/) {
+function addData(tmpParticleData, tmpFluidData, tmpFluidCellData, tmpcaData, tmpLineTrailsData, tmpShockwaveData) {
     particleData.push(tmpParticleData);
     fluidData.push(tmpFluidData);
     fluidCellData.push(tmpFluidCellData);
     cellularAutomataData.push(tmpcaData);
     lineTrailsData.push(tmpLineTrailsData);
-    // linePolygonsData.push(tmpLinePolygonsData);
     shockwaveData.push(tmpShockwaveData);
-    // explosionData.push(tmpExplosionData);
 }
 
 exports.addData = addData;
@@ -39,18 +35,14 @@ function save(index) {
     saveFile(index, fluidCellData, 'fluidCells');
     saveFile(index, cellularAutomataData, 'cellularAutomata');
     saveFile(index, lineTrailsData, 'lineTrails');
-    // saveFile(index, linePolygonsData, 'linePolygons');
     saveFile(index, shockwaveData, 'shockwaves');
-    // saveFile(index, explosionData, 'explosion');
 
     particleData = [];
     fluidData = [];
     fluidCellData = [];
     cellularAutomataData = [];
     lineTrailsData = [];
-    // linePolygonsData = [];
     shockwaveData = [];
-    // explosionData = [];
 }
 
 exports.save = save;

@@ -16,8 +16,7 @@ const log = require("./log.js");
 // VARIABLES
 // 12m / 24fps => 17280
 
-// let timeEnd = 17280;
-let timeEnd = 120;
+let timeEnd = 17280;
 let timePassed = 1;
 exports.timePassed = timePassed;
 let timeSteps = [0, 9600, 14400];
@@ -104,15 +103,11 @@ let tmpFluidData = [];
 let preFluidData = [];
 let fluidCellData = [];
 let lineTrailData = [];
-let linePolygonData = [];
 let shockwaveData = [];
-let explosionData = [];
 let decimals = 1;
 
 exports.lineTrailData = lineTrailData;
-exports.linePolygonData = linePolygonData;
 exports.shockwaveData = shockwaveData;
-exports.explosionData = explosionData;
 exports.decimals = decimals;
 
 // FPS
@@ -156,7 +151,7 @@ process.on("message", message => {
 				if (err) {
 					throw err;
 				}
-				
+
 				tmpData = JSON.parse(data);
 				tmpData += ', ' + startHexString;
 				tmpData = JSON.stringify(tmpData);
@@ -687,15 +682,6 @@ function gatherData() {
 
 		// Gather Cellular Automata Data
 		tmpCellularAutmataData = ca.getChangedCells();
-
-		// explosion Data
-		/*
-		for (let i = 0; i < explosions.length; i++) {
-			let tmpData = [[explosions[i].pos[0].toFixed(decimals), explosions[i].pos[1].toFixed(decimals)], explosions[i].tmpSize.toFixed(decimals)];
-
-			explosionData.push(tmpData);
-		}
-		*/
 	}
 
 	// Clean up tmpFluidData by changing indexes to only the difference to the prev Index
@@ -717,12 +703,6 @@ function gatherData() {
 	// Reset shockwave Data
 	shockwaveData = [];
 	exports.shockwaveData = shockwaveData;
-
-	// Reset Explosion Data
-	/*
-	explosionData = [];
-	exports.explosionData = explosionData;
-	*/
 
 	// Save JSON Files
 	if (((timePassed) % data.saveFreq == 0 && timePassed != 0) || timePassed >= timeEnd) {
@@ -751,12 +731,10 @@ function gatherData() {
 		let saveString = "      " + startHexString;
 		saveString += " time " + timePassed + "/" + timeEnd/* + " (" + data.saveFreq + ")."*/;
 		saveString += " real " + realTimePassed + " FPS " + fps.toFixed(2);
-		// saveString += " remaining " + Math.floor(timeLeft / 3600) + "h " + (Math.floor(timeLeft / 60) % 60) + "m " + Math.floor(timeLeft % 60) + "s";
 		saveString += " at " + time;
 		saveString += " memory " + Math.round(memoryUsed * 100) / 100 + "MB";
 
 		console.log(saveString);
-		// console.log("Memory Used", process.memoryUsage());
 	};
 }
 

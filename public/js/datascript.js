@@ -24,13 +24,6 @@ let shockwaveData = [
     []
 ];
 
-/*
-let explosionData = [
-    [],
-    []
-];
-*/
-
 let dataObjects = [
     particles,
     fluid,
@@ -38,7 +31,6 @@ let dataObjects = [
     cellularAutomataData,
     lineTrailsData,
     shockwaveData,
-    // explosionData
 ]
 
 let dataNames = [
@@ -47,8 +39,7 @@ let dataNames = [
     'fluidCells',
     'cellularAutomata',
     'lineTrails',
-    'shockwaves',
-    // 'explosion'
+    'shockwaves'
 ]
 
 let particleMaxState;
@@ -112,9 +103,6 @@ function dataInit() {
     // Load Line Trail Data
     loadFile(0, 0, lineTrailsData, 'lineTrails', checkForInit);
 
-    // Load explosion Data
-    // loadFile(0, 0, explosionData, 'explosion', checkForInit);
-
     // Load shockwave Data
     loadFile(0, 0, shockwaveData, 'shockwaves', checkForInit);
 
@@ -136,9 +124,6 @@ function loadData(currentFileIndex, relativeIndex) {
 
     // Load Line Trail Data
     loadFile(currentFileIndex, relativeIndex, lineTrailsData, 'lineTrails', undefined);
-    
-    // Load Explosion Data
-    // loadFile(currentFileIndex, relativeIndex, explosionData, 'explosion', undefined);
 
     // Load Shockwave Data
     loadFile(currentFileIndex, relativeIndex, shockwaveData, 'shockwaves', undefined);    
