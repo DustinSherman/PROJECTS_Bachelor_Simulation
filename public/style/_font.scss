@@ -44,6 +44,14 @@ a {
     text-decoration: none;
 }
 
+#wrapper a {
+    border-bottom: 1px solid #fff;
+
+    &:hover {
+        border-bottom: 2px solid #fff;
+    }
+}
+
 h1 {
     font-family: 'InconsolataSemiExpanded-ExtraLight', 'Lucida Console', Monaco, monospace;
     font-size: 5.75rem;
